@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Panel - UIU Connect</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .feature-section {
+            background-color: var(--primary-bg-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .feature-section h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+        }
+        .list-container {
+            margin-top: 15px;
+        }
+        .list-item {
+            background-color: var(--secondary-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .list-item .item-details {
+            flex-grow: 1;
+        }
+        .list-item .item-actions button {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        .list-item .item-actions button:hover {
+            background-color: #d32f2f;
+        }
+        .no-items {
+            color: var(--text-color-secondary);
+            font-style: italic;
+        }
+        /* Style for multiple select dropdown */
+        select[multiple] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--primary-bg-color);
+            color: var(--text-color-primary);
+            font-size: 1em;
+            height: 150px; /* Adjust height as needed */
+        }
+        select[multiple] option {
+            padding: 5px;
+            background-color: var(--primary-bg-color);
+            color: var(--text-color-primary);
+        }
+        select[multiple] option:checked {
+            background-color: var(--accent-color);
+            color: var(--text-color-primary);
+        }
+
+        /* Private Post Detail View */
+        .private-post-detail-view {
+            display: none; /* Hidden by default */
+            margin-top: 20px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+        .private-post-detail-view h2 {
+            color: var(--accent-color);
+        }
+        .private-post-content {
+            background-color: var(--secondary-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .private-post-meta {
+            font-size: 0.9em;
+            color: var(--text-color-secondary);
+            margin-bottom: 10px;
+        }
+        .access-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .access-list-item {
+            background-color: var(--button-bg-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            display: flex;
+            align-items: center;
+        }
+        .access-list-item button {
+            background: none;
+            border: none;
+            color: white;
+            margin-left: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        /* Styles for comments section */
+        .comments-section {
+            margin-top: 20px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+        .comment-list {
+            list-style: none;
+            padding: 0;
+        }
+        .comment-item {
+            background-color: var(--primary-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .comment-item .comment-meta {
+            font-size: 0.8em;
+            color: var(--text-color-secondary);
+            margin-bottom: 5px;
+        }
+        .comment-item .comment-author {
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+        .comment-item .comment-content {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .comment-form {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Faculty Panel</h1>
+        <div style="display: flex; align-items: center;">
+            <!-- Notification Bell Icon and Dropdown -->
+            <div class="notification-icon-container">
+                <i class="fas fa-bell" id="notificationBell"></i>
+                <span class="notification-badge" id="notificationBadge"></span>
+                <div class="notifications-dropdown" id="notificationsDropdown">
+                    <h3>Notifications</h3>
+                    <div id="notificationsList">
+                        <p class="no-notifications">No new notifications.</p>
+                    </div>
+                    <button class="mark-all-read-btn" id="markAllReadBtn" style="display:none;">Mark All As Read</button>
+                </div>
+            </div>
+            <a href="/logout" class="action-link-danger">Logout</a>
+        </div>
+    </div>
+    
+    <nav class="navbar">
+    <ul>
+        <li><a href="/profile">Home</a></li>
+        <li><a href="/forum">Forum</a></li>
+        <li><a href="/events">Events</a></li>
+        <li><a href="/career">Career Corner</a></li>
+        <li><a href="/alumni">Alumni Network</a></li>
+        <li><a href="/announcements">Announcements</a></li>
+        <li><a href="/inbox">Inbox</a></li>
+        <li><a href="/irc">IRC Chat</a></li>
+        <li><a href="/settings">Settings</a></li>
+        <li><a href="/faq">FAQ</a></li>
+        <li><a href="/top-contributors">Top Contributors</a></li>
+        <li id="adminLink" style="display:none;"><a href="/admin">Admin Panel</a></li>
+        <li><a href="/filesharing" id="fileSharingLink">File Sharing</a></li>
+        <li><a href="/activities">My Activities</a></li>
+        <li><a href="/faculty-panel">Faculty Panel</a></li>
+        <li><a href="/support">Support</a></li>
+    </ul>
+</nav>
+
+    <div class="container">
+        <h2>Faculty Panel Dashboard</h2>
+        <p>This panel provides tools for managing private posts and other Faculty-specific features.</p>
+        
+        <!-- Section: Create Private Post (visible only to Faculty/Admin) -->
+        <div class="feature-section" id="createPrivatePostSection">
+            <h3>Create Private Post</h3>
+            <p>Share private content accessible only to selected users.</p>
+            <form id="createPrivatePostForm">
+                <label for="privatePostTitle">Title:</label>
+                <input type="text" id="privatePostTitle" required>
+
+                <label for="privatePostContent">Content:</label>
+                <textarea id="privatePostContent" rows="8" required></textarea>
+
+                <label for="accessUsers">Grant Access To (Select Users):</label>
+                <select id="accessUsers" multiple required>
+                    <!-- User options will be loaded here dynamically -->
+                </select>
+                <small>Hold Ctrl/Cmd to select multiple users.</small>
+                
+                <button type="submit">Create Private Post</button>
+                <div id="privatePostMessage" class="message" style="display:none;"></div>
+                <div id="privatePostError" class="error" style="display:none;"></div>
+            </form>
+        </div>
+
+        <!-- Section: Your Private Posts -->
+        <div class="feature-section" id="myPrivatePostsSection">
+            <h3>Your Private Posts</h3>
+            <p>Content created for specific users.</p>
+            <div id="myPrivatePostsList" class="list-container">
+                <p class="no-items">Loading your private posts...</p>
+            </div>
+        </div>
+
+        <!-- Private Post Detail View -->
+        <div id="privatePostDetailView" class="private-post-detail-view">
+            <button id="backToPrivatePostsBtn" class="back-button">Back to My Private Posts</button>
+            <h2>Private Post: <span id="detailPrivatePostTitle"></span></h2>
+            <div class="private-post-meta">
+                <p>Created by: <span id="detailPrivatePostAuthor"></span> on <span id="detailPrivatePostCreatedAt"></span></p>
+            </div>
+            <div class="private-post-content" id="detailPrivatePostContent"></div>
+
+            <h3>Users with Access:</h3>
+            <ul id="privatePostAccessList" class="access-list">
+                <p class="no-items">Loading access list...</p>
+            </ul>
+            
+            <div class="feature-section" id="addAccessUsersSection">
+                <h3>Add Users to Access This Post:</h3>
+                <form id="addPrivatePostAccessForm">
+                    <label for="addAccessUsersSelect">Select Users to Grant Access:</label>
+                    <select id="addAccessUsersSelect" multiple required>
+                        <!-- User options will be loaded here dynamically -->
+                    </select>
+                    <small>Hold Ctrl/Cmd to select multiple users.</small>
+                    <button type="submit">Grant Access</button>
+                    <div id="grantAccessMessage" class="message" style="display:none;"></div>
+                    <div id="grantAccessError" class="error" style="display:none;"></div>
+                </form>
+            </div>
+
+            <!-- NEW: Comments Section for Private Posts -->
+            <div class="comments-section">
+                <h3>Comments:</h3>
+                <ul id="privatePostCommentsList" class="comment-list">
+                    <p class="no-items">Loading comments...</p>
+                </ul>
+                <form id="addPrivatePostCommentForm" class="comment-form">
+                    <label for="privatePostCommentContent">Add a Comment:</label>
+                    <textarea id="privatePostCommentContent" rows="3" required></textarea>
+                    <button type="submit">Post Comment</button>
+                    <div id="commentMessage" class="message" style="display:none;"></div>
+                    <div id="commentError" class="error" style="display:none;"></div>
+                </form>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="footer">
+        <p>UIU Connect By END</p>
+    </div>
+
+    <script src="/notifications.js"></script>
+    <script>
+        let currentUserId = null;
+        let currentUserRoles = [];
+        let isAdmin = false; // Flag for admin role
+        let isFacultyOrAdmin = false; // Flag for Faculty or Admin role
+        let allUsers = []; // Store all users for dropdowns
+        let currentPrivatePostId = null; // To keep track of the currently viewed private post
+
+        // DOM elements for various sections
+        const createPrivatePostSection = document.getElementById('createPrivatePostSection');
+        const createPrivatePostForm = document.getElementById('createPrivatePostForm');
+        const privatePostTitleInput = document.getElementById('privatePostTitle');
+        const privatePostContentTextarea = document.getElementById('privatePostContent');
+        const accessUsersSelect = document.getElementById('accessUsers');
+        const privatePostMessageDiv = document.getElementById('privatePostMessage');
+        const privatePostErrorDiv = document.getElementById('privatePostError');
+
+        const myPrivatePostsList = document.getElementById('myPrivatePostsList');
+
+        const privatePostDetailView = document.getElementById('privatePostDetailView');
+        const backToPrivatePostsBtn = document.getElementById('backToPrivatePostsBtn');
+        const detailPrivatePostTitle = document.getElementById('detailPrivatePostTitle');
+        const detailPrivatePostAuthor = document.getElementById('detailPrivatePostAuthor');
+        const detailPrivatePostCreatedAt = document.getElementById('detailPrivatePostCreatedAt');
+        const detailPrivatePostContent = document.getElementById('detailPrivatePostContent');
+        const privatePostAccessList = document.getElementById('privatePostAccessList');
+        const addAccessUsersSection = document.getElementById('addAccessUsersSection');
+        const addPrivatePostAccessForm = document.getElementById('addPrivatePostAccessForm');
+        const addAccessUsersSelect = document.getElementById('addAccessUsersSelect');
+        const grantAccessMessageDiv = document.getElementById('grantAccessMessage');
+        const grantAccessErrorDiv = document.getElementById('grantAccessError');
+        
+        // NEW: Comment-related DOM elements
+        const privatePostCommentsList = document.getElementById('privatePostCommentsList');
+        const addPrivatePostCommentForm = document.getElementById('addPrivatePostCommentForm');
+        const privatePostCommentContentTextarea = document.getElementById('privatePostCommentContent');
+        const commentMessageDiv = document.getElementById('commentMessage');
+        const commentErrorDiv = document.getElementById('commentError');
+
+
+        async function fetchUserData() {
+            try {
+                const res = await fetch('/user-data');
+                if (res.ok) {
+                    const data = await res.json();
+                    currentUserId = data.user.id;
+                    currentUserRoles = data.user.roles;
+                    isAdmin = currentUserRoles.includes('Admin'); // Set isAdmin flag
+                    isFacultyOrAdmin = isAdmin || currentUserRoles.includes('Faculty'); // Update combined flag
+                    
+                    // Show admin link if user is admin
+                    const adminLink = document.getElementById('adminLink');
+                    if (isAdmin && adminLink) {
+                        adminLink.style.display = 'list-item';
+                    }
+
+                    // Show Faculty Panel link if the user is a Faculty or Admin
+                    const facultyPanelLink = document.getElementById('facultyPanelLink');
+                    if (facultyPanelLink && isFacultyOrAdmin) {
+                        facultyPanelLink.style.display = 'list-item';
+                    }
+                    
+                    // Always show My Activities link for any authenticated user
+                    const activitiesLink = document.getElementById('activitiesLink');
+                    if (activitiesLink) {
+                        activitiesLink.style.display = 'list-item';
+                    }
+
+                    return true;
+                } else {
+                    window.location.href = '/'; // Redirect if not authenticated
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+                window.location.href = '/';
+                return false;
+            }
+        }
+
+        // Fetch all users for access dropdowns
+        async function fetchAllUsers() {
+            try {
+                const res = await fetch('/api/users-list'); // Endpoint to get all users
+                if (res.ok) {
+                    const data = await res.json();
+                    // Filter out the current user themselves
+                    allUsers = data.filter(user => user.id !== currentUserId);
+                    populateUserSelect(accessUsersSelect, allUsers); // For create form
+                    // populateUserSelect(addAccessUsersSelect); // This is populated in viewPrivatePostDetail
+                } else {
+                    console.error('Failed to load users for dropdown.');
+                }
+            } catch (error) {
+                console.error('Network error fetching users:', error);
+            }
+        }
+
+        function populateUserSelect(selectElement, usersToPopulate) {
+            selectElement.innerHTML = '';
+            usersToPopulate.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.username} (${user.name})`;
+                selectElement.appendChild(option);
+            });
+        }
+
+
+        // --- Private Post Creation Logic ---
+        if (createPrivatePostForm) {
+            createPrivatePostForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                privatePostMessageDiv.style.display = 'none';
+                privatePostErrorDiv.style.display = 'none';
+
+                const title = privatePostTitleInput.value.trim();
+                const content = privatePostContentTextarea.value.trim();
+                const selectedUserIds = Array.from(accessUsersSelect.selectedOptions).map(option => parseInt(option.value));
+
+                if (!title || !content) {
+                    privatePostErrorDiv.textContent = 'Title and content are required.';
+                    privatePostErrorDiv.style.display = 'block';
+                    return;
+                }
+
+                try {
+                    const res = await fetch('/api/private-posts', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title, content, recipient_ids: selectedUserIds })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        privatePostMessageDiv.textContent = data.message || 'Private post created successfully!';
+                        privatePostMessageDiv.style.display = 'block';
+                        createPrivatePostForm.reset();
+                        accessUsersSelect.value = null; // Deselect all options
+                        await fetchMyPrivatePosts(); // Refresh list of private posts
+                    } else {
+                        privatePostErrorDiv.textContent = data.error || 'Failed to create private post.';
+                        privatePostErrorDiv.style.display = 'block';
+                    }
+                } catch (err) {
+                    console.error('Error creating private post:', err);
+                    privatePostErrorDiv.textContent = 'Network error or server unavailable.';
+                    privatePostErrorDiv.style.display = 'block';
+                }
+            });
+        }
+        
+        // --- Private Post List and Detail Logic ---
+        async function fetchMyPrivatePosts() {
+            myPrivatePostsList.innerHTML = '<p class="no-items">Loading your private posts...</p>';
+            privatePostDetailView.style.display = 'none'; // Hide detail view when returning to list
+
+            try {
+                const res = await fetch('/api/private-posts/my');
+                const privatePosts = await res.json();
+
+                myPrivatePostsList.innerHTML = '';
+                if (privatePosts.length === 0) {
+                    myPrivatePostsList.innerHTML = '<p class="no-items">You have not created any private posts yet.</p>';
+                } else {
+                    privatePosts.forEach(post => {
+                        const item = document.createElement('div');
+                        item.classList.add('list-item');
+                        item.dataset.privatePostId = post.id;
+                        item.innerHTML = `
+                            <div class="item-details">
+                                <strong>${post.title}</strong>
+                                <p>Created: ${new Date(post.created_at).toLocaleDateString()}</p>
+                            </div>
+                            <div class="item-actions">
+                                <button onclick="viewPrivatePostDetail(${post.id})">View/Manage Access</button>
+                                <button onclick="deletePrivatePost(${post.id})" class="delete-button">Delete</button>
+                            </div>
+                        `;
+                        myPrivatePostsList.appendChild(item);
+                    });
+                }
+            } catch (err) {
+                myPrivatePostsList.innerHTML = '<p class="no-items error">Error loading private posts.</p>';
+                console.error('Error fetching private posts:', err);
+            }
+        }
+
+        async function viewPrivatePostDetail(privatePostId) {
+            currentPrivatePostId = privatePostId;
+            // Hide all other sections, show only detail view
+            document.querySelectorAll('.feature-section').forEach(section => section.style.display = 'none');
+            privatePostDetailView.style.display = 'block';
+            
+            privatePostAccessList.innerHTML = '<p class="no-items">Loading access list...</p>';
+            addAccessUsersSection.style.display = 'block'; // Show the add access form
+            addPrivatePostAccessForm.reset();
+            grantAccessMessageDiv.style.display = 'none';
+            grantAccessErrorDiv.style.display = 'none';
+            
+            privatePostCommentsList.innerHTML = '<p class="no-items">Loading comments...</p>'; // Clear comments
+            commentMessageDiv.style.display = 'none';
+            commentErrorDiv.style.display = 'none';
+            privatePostCommentContentTextarea.value = ''; // Clear comment textarea
+
+
+            try {
+                const res = await fetch(`/api/private-posts/${privatePostId}`);
+                const data = await res.json();
+
+                if (res.ok) {
+                    const post = data.post;
+                    const accessUsers = data.accessUsers;
+                    const comments = data.comments; // NEW: Fetch comments
+
+                    detailPrivatePostTitle.textContent = post.title;
+                    detailPrivatePostAuthor.textContent = post.author_username;
+                    detailPrivatePostCreatedAt.textContent = new Date(post.created_at).toLocaleString();
+                    detailPrivatePostContent.textContent = post.content;
+
+                    privatePostAccessList.innerHTML = '';
+                    if (accessUsers.length === 0) {
+                        privatePostAccessList.innerHTML = '<p class="no-items">No users have access to this post yet.</p>';
+                    } else {
+                        accessUsers.forEach(user => {
+                            const li = document.createElement('li');
+                            li.classList.add('access-list-item');
+                            li.innerHTML = `
+                                ${user.username} (${user.name}) 
+                                <button onclick="removePrivatePostAccess(${privatePostId}, ${user.user_id}, '${user.username}')"><i class="fas fa-times-circle"></i></button>
+                            `;
+                            privatePostAccessList.appendChild(li);
+                        });
+                    }
+
+                    // Re-populate select dropdown, filtering out users who already have access
+                    const usersWithoutAccess = allUsers.filter(user => 
+                        !accessUsers.some(accessUser => accessUser.user_id === user.id)
+                    );
+                    populateUserSelect(addAccessUsersSelect, usersWithoutAccess);
+
+                    // NEW: Display comments
+                    privatePostCommentsList.innerHTML = '';
+                    if (comments.length === 0) {
+                        privatePostCommentsList.innerHTML = '<p class="no-items">No comments yet. Be the first to comment!</p>';
+                    } else {
+                        comments.forEach(comment => {
+                            const commentItem = document.createElement('li');
+                            commentItem.classList.add('comment-item');
+                            commentItem.innerHTML = `
+                                <div class="comment-meta">
+                                    <span class="comment-author">${comment.commenter_username}</span>
+                                    <span> - ${new Date(comment.created_at).toLocaleString()}</span>
+                                </div>
+                                <div class="comment-content">${comment.comment_content}</div>
+                            `;
+                            privatePostCommentsList.appendChild(commentItem);
+                        });
+                        // Scroll to the bottom of the comments list
+                        privatePostCommentsList.scrollTop = privatePostCommentsList.scrollHeight;
+                    }
+
+
+                } else {
+                    alert('Error loading private post details: ' + (data.error || 'Unknown error.'));
+                    backToPrivatePosts();
+                }
+            } catch (err) {
+                console.error('Error fetching private post details:', err);
+                alert('Network error fetching private post details.');
+                backToPrivatePosts();
+            }
+        }
+
+        function populateUserSelect(selectElement, usersToPopulate) {
+            selectElement.innerHTML = '';
+            usersToPopulate.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.username} (${user.name})`;
+                selectElement.appendChild(option);
+            });
+        }
+
+
+        async function grantPrivatePostAccess() {
+            grantAccessMessageDiv.style.display = 'none';
+            grantAccessErrorDiv.style.display = 'none';
+
+            const selectedUserIds = Array.from(addAccessUsersSelect.selectedOptions).map(option => parseInt(option.value));
+
+            if (selectedUserIds.length === 0) {
+                grantAccessErrorDiv.textContent = 'Please select at least one user to grant access.';
+                grantAccessErrorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/private-posts/${currentPrivatePostId}/grant-access`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_ids: selectedUserIds })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    grantAccessMessageDiv.textContent = data.message || 'Access granted successfully!';
+                    grantAccessMessageDiv.style.display = 'block';
+                    addPrivatePostAccessForm.reset();
+                    await viewPrivatePostDetail(currentPrivatePostId); // Refresh detail view
+                } else {
+                    grantAccessErrorDiv.textContent = data.error || 'Failed to grant access.';
+                    grantAccessErrorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Error granting access:', err);
+                grantAccessErrorDiv.textContent = 'Network error or server unavailable.';
+                grantAccessErrorDiv.style.display = 'block';
+            }
+        }
+
+        async function removePrivatePostAccess(privatePostId, userIdToRemove, username) {
+            if (!confirm(`Are you sure you want to revoke access for ${username} from this post?`)) {
+                return;
+            }
+            try {
+                const res = await fetch(`/api/private-posts/${privatePostId}/revoke-access`, {
+                    method: 'POST', // Using POST for consistency with other revoke actions
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userIdToRemove })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(data.message);
+                    await viewPrivatePostDetail(privatePostId); // Refresh detail view
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to revoke access.'));
+                }
+            } catch (err) {
+                console.error('Error revoking access:', err);
+                alert('Network error.');
+            }
+        }
+
+        async function deletePrivatePost(privatePostId) {
+            if (!confirm('Are you sure you want to delete this private post? This action cannot be undone.')) {
+                return;
+            }
+            try {
+                const res = await fetch(`/api/private-posts/${privatePostId}/delete`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(data.message);
+                    await fetchMyPrivatePosts(); // Refresh list
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to delete.'));
+                }
+            } catch (err) {
+                console.error('Error deleting private post:', err);
+                alert('Network error.');
+            }
+        }
+
+        function backToPrivatePosts() {
+            privatePostDetailView.style.display = 'none';
+            // Show all main sections again
+            document.getElementById('myPrivatePostsSection').style.display = 'block';
+            createPrivatePostSection.style.display = 'block'; // Show create section
+            fetchMyPrivatePosts(); // Refresh the list
+        }
+
+        if (backToPrivatePostsBtn) {
+            backToPrivatePostsBtn.addEventListener('click', backToPrivatePosts);
+        }
+        if (addPrivatePostAccessForm) {
+            addPrivatePostAccessForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await grantPrivatePostAccess();
+            });
+        }
+        
+        // NEW: Add Comment Logic
+        if (addPrivatePostCommentForm) {
+            addPrivatePostCommentForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                commentMessageDiv.style.display = 'none';
+                commentErrorDiv.style.display = 'none';
+
+                const commentContent = privatePostCommentContentTextarea.value.trim();
+
+                if (!commentContent) {
+                    commentErrorDiv.textContent = 'Comment cannot be empty.';
+                    commentErrorDiv.style.display = 'block';
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`/api/private-posts/${currentPrivatePostId}/comments`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ comment_content: commentContent })
+                    });
+                    const data = await res.json();
+
+                    if (res.ok) {
+                        commentMessageDiv.textContent = data.message || 'Comment posted successfully!';
+                        commentMessageDiv.style.display = 'block';
+                        privatePostCommentContentTextarea.value = ''; // Clear textarea
+                        await viewPrivatePostDetail(currentPrivatePostId); // Refresh comments
+                    } else {
+                        commentErrorDiv.textContent = data.error || 'Failed to post comment.';
+                        commentErrorDiv.style.display = 'block';
+                    }
+                } catch (err) {
+                    console.error('Error posting comment:', err);
+                    commentErrorDiv.textContent = 'Network error or server unavailable.';
+                    commentErrorDiv.style.display = 'block';
+                }
+            });
+        }
+
+
+        // Initialize the page by fetching user data and then their content
+        document.addEventListener('DOMContentLoaded', async () => {
+            const authenticated = await fetchUserData();
+            if (authenticated) {
+                // Ensure faculty-specific sections are only displayed if the user has the role
+                if (isFacultyOrAdmin) {
+                    createPrivatePostSection.style.display = 'block';
+                    document.getElementById('myPrivatePostsSection').style.display = 'block';
+                    await fetchAllUsers(); // Fetch all users for access dropdowns
+                    fetchMyPrivatePosts(); // Load private posts
+                } else {
+                    // Hide faculty-specific sections if user is not Faculty/Admin
+                    createPrivatePostSection.style.display = 'none';
+                    document.getElementById('myPrivatePostsSection').style.display = 'none';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

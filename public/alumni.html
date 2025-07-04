@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alumni Network - UIU Connect</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .alumni-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .alumni-card {
+            background-color: var(--primary-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .alumni-card h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+        }
+
+        .alumni-card .alumni-role {
+            font-weight: bold;
+        }
+
+        .alumni-card .alumni-company {
+            color: var(--text-color-secondary);
+            margin-bottom: 15px;
+        }
+
+        .alumni-card .alumni-actions {
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .alumni-card .alumni-actions a,
+        .alumni-card .alumni-actions button {
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-right: 10px;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .alumni-card .alumni-actions .linkedin-link {
+            background-color: #0077B5;
+            color: white;
+        }
+
+        .alumni-card .alumni-actions .mentor-btn {
+            background-color: var(--button-bg-color);
+            color: var(--text-color-primary);
+            border: none;
+            cursor: pointer;
+        }
+
+        /* NEW: Style for the delete button */
+        .alumni-card .alumni-actions .delete-profile-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .alumni-profile-form-container {
+            display: none;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Alumni Network</h1>
+        <a href="/logout" class="action-link-danger">Logout</a>
+    </div>
+
+
+    <nav class="navbar">
+        <ul>
+            <li><a href="/profile">Home</a></li>
+            <li><a href="/forum">Forum</a></li>
+            <li><a href="/events">Events</a></li>
+            <li><a href="/career">Career Corner</a></li>
+            <li><a href="/alumni">Alumni Network</a></li>
+            <li><a href="/announcements">Announcements</a></li>
+            <li><a href="/inbox">Inbox</a></li>
+            <li><a href="/irc">IRC Chat</a></li>
+            <li><a href="/settings">Settings</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/top-contributors">Top Contributors</a></li>
+            <li id="adminLink" style="display:none;"><a href="/admin">Admin Panel</a></li>
+            <li><a href="/filesharing" id="fileSharingLink">File Sharing</a></li>
+            <li><a href="/activities">My Activities</a></li>
+            <li><a href="/faculty-panel">Faculty Panel</a></li>
+            <li><a href="/support">Support</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h2>Connect with UIU Alumni</h2>
+        <p>Find alumni in your field of interest and reach out for mentorship and career advice.</p>
+        <div id="alumniGrid" class="alumni-grid">
+            <p>Loading alumni network...</p>
+        </div>
+        <div id="alumniError" class="error" style="display:none;"></div>
+
+        <div id="alumniProfileFormContainer" class="alumni-profile-form-container">
+            <h2>Your Alumni Profile</h2>
+            <p>Your profile will be visible in the directory. Fill out the form to connect with students and other
+                alumni.</p>
+            <form id="alumniProfileForm">
+                <label for="company">Current Company:</label>
+                <input type="text" id="company">
+                <label for="jobTitle">Job Title:</label>
+                <input type="text" id="jobTitle">
+                <label for="industry">Industry:</label>
+                <input type="text" id="industry">
+                <label for="linkedinUrl">LinkedIn Profile URL:</label>
+                <input type="text" id="linkedinUrl">
+                <label for="isMentor" style="display: flex; align-items: center;">
+                    <input type="checkbox" id="isMentor" style="width: auto; margin-right: 10px;">
+                    I am willing to be a mentor for current students.
+                </label>
+                <button type="submit">Update Profile</button>
+                <div id="profileMessage" class="message" style="display:none;"></div>
+                <div id="profileError" class="error" style="display:none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>UIU Connect By END</p>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let isAdmin = false; // NEW: Flag to check for Admin role
+
+        async function requestMentorship(mentorUserId, mentorUsername) {
+            const subject = "Mentorship Request from a UIU Student";
+            const message = `Hello ${mentorUsername},\n\nI found your profile in the UIU Connect Alumni Network and I am interested in your career path. I would be grateful for the opportunity to connect and ask for your guidance.\n\nPlease let me know if you would be open to a brief chat.\n\nThank you for your time and consideration.`;
+
+            if (!confirm(`This will send a pre-written private message to ${mentorUsername} requesting mentorship. Do you want to proceed?`)) {
+                return;
+            }
+
+            try {
+                // We will just re-use the private message API to send the request
+                const res = await fetch('/api/private-messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ receiverUsername: mentorUsername, subject, content: message })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                alert("Mentorship request sent successfully via private message!");
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        }
+
+        // NEW: Function to delete an alumni profile
+        async function deleteAlumniProfile(userId, username) {
+            if (!confirm(`Are you sure you want to delete the alumni profile for ${username}? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/alumni-profiles/${userId}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error);
+                }
+                alert(data.message);
+                // Refresh the list to show the profile has been removed
+                fetchAlumniProfiles();
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        }
+
+        async function fetchAlumniProfiles() {
+            const alumniGrid = document.getElementById('alumniGrid');
+            try {
+                const res = await fetch('/api/alumni-profiles');
+                const profiles = await res.json();
+                if (!res.ok) throw new Error(profiles.error);
+
+                alumniGrid.innerHTML = '';
+                if (profiles.length === 0) {
+                    alumniGrid.innerHTML = '<p>No alumni have created a public profile yet.</p>';
+                } else {
+                    profiles.forEach(profile => {
+                        const card = document.createElement('div');
+                        card.className = 'alumni-card';
+
+                        let actionsHtml = '';
+                        if (profile.linkedin_url) {
+                            actionsHtml += `<a href="${profile.linkedin_url}" class="linkedin-link" target="_blank" rel="noopener noreferrer">LinkedIn</a>`;
+                        }
+                        if (profile.is_mentor) {
+                            actionsHtml += `<button class="mentor-btn" onclick="requestMentorship(${profile.user_id}, '${profile.username}')">Request Mentorship</button>`;
+                        }
+                        // NEW: Conditionally add the delete button if the user is an Admin
+                        // The `deleteAlumniProfile` function will be called with the user's ID
+                        if (isAdmin) {
+                            actionsHtml += `<button class="delete-profile-btn" onclick="deleteAlumniProfile(${profile.user_id}, '${profile.username}')">Delete Profile</button>`;
+                        }
+
+                        card.innerHTML = `
+                            <h3>${profile.name}</h3>
+                            <div class="alumni-role">${profile.job_title || 'N/A'}</div>
+                            <div class="alumni-company">${profile.company || 'N/A'} - ${profile.industry || 'N/A'}</div>
+                            <div class="alumni-actions">${actionsHtml}</div>
+                        `;
+                        alumniGrid.appendChild(card);
+                    });
+                }
+            } catch (err) {
+                document.getElementById('alumniError').textContent = err.message;
+                document.getElementById('alumniError').style.display = 'block';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const formContainer = document.getElementById('alumniProfileFormContainer');
+            const alumniForm = document.getElementById('alumniProfileForm');
+
+            async function initializePage() {
+                try {
+                    const res = await fetch('/user-data');
+                    const data = await res.json();
+                    if (res.ok) {
+                        currentUser = data.user;
+                        if (currentUser.roles && currentUser.roles.includes('Admin')) {
+                            document.getElementById('adminLink').style.display = 'inline';
+                            isAdmin = true; // Set the flag
+                        }
+                        // Show the profile edit form only to alumni
+                        if (currentUser.roles && currentUser.roles.includes('Alumni')) {
+                            formContainer.style.display = 'block';
+                            // Pre-fill the form with their existing data if available
+                            const profileRes = await fetch('/api/alumni-profiles/me');
+                            if (profileRes.ok) {
+                                const myProfile = await profileRes.json();
+                                document.getElementById('company').value = myProfile.company || '';
+                                document.getElementById('jobTitle').value = myProfile.job_title || '';
+                                document.getElementById('industry').value = myProfile.industry || '';
+                                document.getElementById('linkedinUrl').value = myProfile.linkedin_url || '';
+                                document.getElementById('isMentor').checked = myProfile.is_mentor;
+                            }
+
+                        }
+                    }
+                } catch (err) { console.error('Error fetching user data:', err); }
+                // Call the fetch function after user data is loaded to use the isAdmin flag
+                fetchAlumniProfiles();
+            }
+
+            alumniForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const profileMessage = document.getElementById('profileMessage');
+                const profileError = document.getElementById('profileError');
+                profileMessage.style.display = 'none';
+                profileError.style.display = 'none';
+
+                const profileData = {
+                    company: document.getElementById('company').value,
+                    job_title: document.getElementById('jobTitle').value,
+                    industry: document.getElementById('industry').value,
+                    linkedin_url: document.getElementById('linkedinUrl').value,
+                    is_mentor: document.getElementById('isMentor').checked,
+                };
+
+                try {
+                    const res = await fetch('/api/alumni-profiles', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(profileData)
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+
+                    profileMessage.textContent = data.message;
+                    profileMessage.style.display = 'block';
+                    fetchAlumniProfiles();
+                } catch (err) {
+                    profileError.textContent = err.message;
+                    profileError.style.display = 'block';
+                }
+            });
+
+            initializePage();
+        });
+    </script>
+</body>
+
+</html>

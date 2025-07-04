@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support - UIU Connect</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body>
+    <div class="header">
+        <h1>Support Center</h1>
+        <div style="display: flex; align-items: center;">
+            <!-- Notification Bell Icon and Dropdown -->
+            <div class="notification-icon-container">
+                <i class="fas fa-bell" id="notificationBell"></i>
+                <span class="notification-badge" id="notificationBadge"></span>
+                <div class="notifications-dropdown" id="notificationsDropdown">
+                    <h3>Notifications</h3>
+                    <div id="notificationsList">
+                        <p class="no-notifications">No new notifications.</p>
+                    </div>
+                    <button class="mark-all-read-btn" id="markAllReadBtn" style="display:none;">Mark All As
+                        Read</button>
+                </div>
+            </div>
+            <a href="/logout" class="action-link-danger">Logout</a>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <ul>
+            <li><a href="/profile">Home</a></li>
+            <li><a href="/forum">Forum</a></li>
+            <li><a href="/events">Events</a></li>
+            <li><a href="/career">Career Corner</a></li>
+            <li><a href="/alumni">Alumni Network</a></li>
+            <li><a href="/announcements">Announcements</a></li>
+            <li><a href="/inbox">Inbox</a></li>
+            <li><a href="/irc">IRC Chat</a></li>
+            <li><a href="/settings">Settings</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/top-contributors">Top Contributors</a></li>
+            <li id="adminLink" style="display:none;"><a href="/admin">Admin Panel</a></li>
+            <li><a href="/filesharing" id="fileSharingLink">File Sharing</a></li>
+            <li><a href="/activities">My Activities</a></li>
+            <li><a href="/faculty-panel">Faculty Panel</a></li>
+            <li><a href="/support">Support</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <!-- User View: Submit New Ticket -->
+        <div id="userNewTicketView">
+            <h2>Contact Support</h2>
+            <p>If you have any questions, issues, or feedback, please open a support ticket below.</p>
+            <form id="newSupportTicketForm" class="support-form">
+                <label for="ticketSubject">Subject:</label>
+                <input type="text" id="ticketSubject" required>
+
+                <label for="ticketMessage">Your Message:</label>
+                <textarea id="ticketMessage" rows="8" required></textarea>
+
+                <button type="submit">Submit Ticket</button>
+                <div id="newTicketMessage" class="message" style="display:none;"></div>
+                <div id="newTicketError" class="error" style="display:none;"></div>
+            </form>
+
+            <h2>Your Tickets</h2>
+            <div id="userTicketsList" class="ticket-list-container">
+                <p>Loading your tickets...</p>
+            </div>
+            <div id="userTicketsError" class="error" style="display:none;"></div>
+        </div>
+
+        <!-- Admin View: Manage All Tickets -->
+        <div id="adminTicketsView" style="display:none;">
+            <h2>Admin: Manage Support Tickets</h2>
+            <div class="admin-ticket-filter">
+                <button data-status="all" class="active">All</button>
+                <button data-status="open">Open</button>
+                <button data-status="in_progress">In Progress</button>
+                <button data-status="awaiting_user_reply">Awaiting User Reply</button>
+                <button data-status="awaiting_admin_reply">Awaiting Admin Reply</button>
+                <button data-status="closed">Closed</button>
+            </div>
+            <div id="adminTicketsList" class="ticket-list-container">
+                <p>Loading all tickets...</p>
+            </div>
+            <div id="adminTicketsError" class="error" style="display:none;"></div>
+        </div>
+
+        <!-- Ticket Detail View (for both user and admin) -->
+        <div id="ticketDetailView" class="ticket-detail-view">
+            <button id="backToTicketsBtn" class="back-button">Back to All Tickets</button>
+
+            <div id="ticketDetailHeader" class="ticket-detail-header">
+                <h2 id="detailSubject"></h2>
+                <p>Status: <span id="detailStatus" class="ticket-status"></span></p>
+                <p>Created by: <span id="detailCreatedBy"></span> on <span id="detailCreatedAt"></span></p>
+                <p id="detailAssignedAdmin" style="display:none;">Assigned Admin: <span></span></p>
+            </div>
+
+            <!-- Admin Controls for Status -->
+            <div id="adminDetailControls" class="admin-ticket-controls" style="display:none;">
+                <select id="ticketStatusSelect">
+                    <option value="open">Open</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="awaiting_user_reply">Awaiting User Reply</option>
+                    <option value="awaiting_admin_reply">Awaiting Admin Reply</option>
+                    <option value="closed">Closed</option>
+                </select>
+                <button id="updateStatusBtn" class="status-update-btn">Update Status</button>
+            </div>
+
+            <h3>Conversation:</h3>
+            <div id="messageThread" class="message-thread">
+                <p>Loading messages...</p>
+            </div>
+            <div id="messagesError" class="error" style="display:none;"></div>
+
+            <form id="replyTicketForm" class="ticket-reply-form">
+                <label for="replyMessage">Your Reply:</label>
+                <textarea id="replyMessage" rows="5" required></textarea>
+                <button type="submit">Send Reply</button>
+                <div id="replyMessageResult" class="message" style="display:none;"></div>
+                <div id="replyError" class="error" style="display:none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>UIU Connect By END</p>
+    </div>
+
+    <script src="/notifications.js"></script>
+    <script>
+        let currentUserId = null;
+        let currentUserRoles = [];
+        let isAdmin = false;
+        let currentTicketId = null; // Store the ID of the currently viewed ticket
+
+        // DOM elements for main views
+        const userNewTicketView = document.getElementById('userNewTicketView');
+        const adminTicketsView = document.getElementById('adminTicketsView');
+        const ticketDetailView = document.getElementById('ticketDetailView');
+
+        // Elements for user new ticket form
+        const newSupportTicketForm = document.getElementById('newSupportTicketForm');
+        const ticketSubjectInput = document.getElementById('ticketSubject');
+        const ticketMessageTextarea = document.getElementById('ticketMessage');
+        const newTicketMessageDiv = document.getElementById('newTicketMessage');
+        const newTicketErrorDiv = document.getElementById('newTicketError');
+
+        // Elements for user/admin ticket lists
+        const userTicketsList = document.getElementById('userTicketsList');
+        const userTicketsError = document.getElementById('userTicketsError');
+        const adminTicketsList = document.getElementById('adminTicketsList');
+        const adminTicketsError = document.getElementById('adminTicketsError');
+
+        // Elements for ticket detail view
+        const backToTicketsBtn = document.getElementById('backToTicketsBtn');
+        const detailSubject = document.getElementById('detailSubject');
+        const detailStatus = document.getElementById('detailStatus');
+        const detailCreatedBy = document.getElementById('detailCreatedBy');
+        const detailCreatedAt = document.getElementById('detailCreatedAt');
+        const detailAssignedAdmin = document.getElementById('detailAssignedAdmin');
+        const messageThread = document.getElementById('messageThread');
+        const messagesError = document.getElementById('messagesError');
+        const replyTicketForm = document.getElementById('replyTicketForm');
+        const replyMessageTextarea = document.getElementById('replyMessage');
+        const replyMessageResultDiv = document.getElementById('replyMessageResult');
+        const replyErrorDiv = document.getElementById('replyError');
+        const adminDetailControls = document.getElementById('adminDetailControls');
+        const ticketStatusSelect = document.getElementById('ticketStatusSelect');
+        const updateStatusBtn = document.getElementById('updateStatusBtn');
+
+        let currentFilterStatus = 'all'; // For admin ticket filtering
+
+        // --- Utility Functions ---
+        function formatRelativeTime(timestamp) {
+            if (!timestamp) return 'N/A';
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffSec = Math.round(diffMs / 1000);
+            const diffMin = Math.round(diffSec / 60);
+            const diffHr = Math.round(diffMin / 60);
+            const diffDay = Math.round(diffHr / 24);
+
+            if (diffSec < 60) return `${diffSec}s ago`;
+            if (diffMin < 60) return `${diffMin}m ago`;
+            if (diffHr < 24) return `${diffHr}h ago`;
+            if (diffDay === 0) return `Today ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            if (diffDay === 1) return `Yesterday ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            if (diffDay < 7) return `${diffDay}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        // --- Core Fetching Functions ---
+
+        // Function to check user roles and determine UI view
+        async function checkUserRoles() {
+            try {
+                const res = await fetch('/user-data');
+                if (res.ok) {
+                    const userData = await res.json();
+                    currentUserId = userData.user.id;
+                    currentUserRoles = userData.user.roles || [];
+                    isAdmin = currentUserRoles.includes('Admin');
+
+                    // Adjust navbar admin link visibility
+                    if (isAdmin) {
+                        document.getElementById('adminLink').style.display = 'inline';
+                    }
+
+                    // Show appropriate view based on role
+                    if (isAdmin) {
+                        userNewTicketView.style.display = 'none';
+                        adminTicketsView.style.display = 'block';
+                        await fetchAdminTickets(currentFilterStatus);
+                    } else {
+                        userNewTicketView.style.display = 'block';
+                        adminTicketsView.style.display = 'none';
+                        await fetchUserTickets();
+                    }
+                } else {
+                    // Not authenticated, redirect to login
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('Error checking user roles:', error);
+                window.location.href = '/'; // Redirect on major error
+            }
+        }
+
+        // Fetch user's support tickets
+        async function fetchUserTickets() {
+            userTicketsList.innerHTML = '<p>Loading your tickets...</p>';
+            userTicketsError.style.display = 'none';
+            try {
+                const res = await fetch('/api/support-tickets');
+                const tickets = await res.json();
+
+                if (res.ok) {
+                    userTicketsList.innerHTML = '';
+                    if (tickets.length === 0) {
+                        userTicketsList.innerHTML = '<p>You have not opened any support tickets yet.</p>';
+                    } else {
+                        tickets.forEach(ticket => {
+                            const ticketItem = document.createElement('div');
+                            ticketItem.classList.add('ticket-item');
+                            ticketItem.dataset.ticketId = ticket.id;
+                            ticketItem.innerHTML = `
+                                <div class="ticket-info">
+                                    <h3>${ticket.subject}</h3>
+                                    <p>Opened: ${formatRelativeTime(ticket.created_at)} | Last Update: ${formatRelativeTime(ticket.updated_at)}</p>
+                                </div>
+                                <span class="ticket-status status-${ticket.status}">${ticket.status.replace(/_/g, ' ')}</span>
+                            `;
+                            ticketItem.addEventListener('click', () => viewTicketDetail(ticket.id));
+                            userTicketsList.appendChild(ticketItem);
+                        });
+                    }
+                } else {
+                    userTicketsError.textContent = tickets.error || 'Failed to load your tickets.';
+                    userTicketsError.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Error fetching user tickets:', err);
+                userTicketsError.textContent = 'Network error or server unavailable.';
+                userTicketsError.style.display = 'block';
+            }
+        }
+
+        // Fetch all support tickets for admins (with optional filter)
+        async function fetchAdminTickets(statusFilter = 'all') {
+            adminTicketsList.innerHTML = '<p>Loading all tickets...</p>';
+            adminTicketsError.style.display = 'none';
+            try {
+                const url = statusFilter === 'all' ? '/api/admin/support-tickets' : `/api/admin/support-tickets?status=${statusFilter}`;
+                const res = await fetch(url);
+                const tickets = await res.json();
+
+                if (res.ok) {
+                    adminTicketsList.innerHTML = '';
+                    if (tickets.length === 0) {
+                        adminTicketsList.innerHTML = '<p>No support tickets found for this filter.</p>';
+                    } else {
+                        tickets.forEach(ticket => {
+                            const ticketItem = document.createElement('div');
+                            ticketItem.classList.add('ticket-item');
+                            ticketItem.dataset.ticketId = ticket.id;
+                            ticketItem.innerHTML = `
+                                <div class="ticket-info">
+                                    <h3>${ticket.subject}</h3>
+                                    <p>By: ${ticket.created_by_username} | Opened: ${formatRelativeTime(ticket.created_at)} | Last Update: ${formatRelativeTime(ticket.updated_at)}</p>
+                                    ${ticket.admin_assigned_username ? `<p>Assigned: ${ticket.admin_assigned_username}</p>` : ''}
+                                </div>
+                                <span class="ticket-status status-${ticket.status}">${ticket.status.replace(/_/g, ' ')}</span>
+                            `;
+                            ticketItem.addEventListener('click', () => viewTicketDetail(ticket.id));
+                            adminTicketsList.appendChild(ticketItem);
+                        });
+                    }
+                } else {
+                    adminTicketsError.textContent = tickets.error || 'Failed to load tickets.';
+                    adminTicketsError.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Error fetching admin tickets:', err);
+                adminTicketsError.textContent = 'Network error or server unavailable.';
+                adminTicketsError.style.display = 'block';
+            }
+        }
+
+        // View a specific ticket's details and conversation
+        async function viewTicketDetail(ticketId) {
+            currentTicketId = ticketId; // Store current ticket ID
+            userNewTicketView.style.display = 'none';
+            adminTicketsView.style.display = 'none';
+            ticketDetailView.style.display = 'block';
+            messageThread.innerHTML = '<p>Loading messages...</p>';
+            messagesError.style.display = 'none';
+            replyMessageResultDiv.style.display = 'none';
+            replyErrorDiv.style.display = 'none';
+
+            // Clear reply form
+            replyTicketForm.reset();
+
+            try {
+                const res = await fetch(`/api/support-tickets/${ticketId}`);
+                const data = await res.json();
+
+                if (res.ok) {
+                    const ticket = data.ticket;
+                    const messages = data.messages;
+
+                    detailSubject.textContent = ticket.subject;
+                    detailStatus.textContent = ticket.status.replace(/_/g, ' ');
+                    detailStatus.className = `ticket-status status-${ticket.status}`; // Apply status-specific color
+                    detailCreatedBy.textContent = ticket.created_by_username;
+                    detailCreatedAt.textContent = new Date(ticket.created_at).toLocaleString();
+                    if (ticket.admin_assigned_username) {
+                        detailAssignedAdmin.style.display = 'block';
+                        detailAssignedAdmin.querySelector('span').textContent = ticket.admin_assigned_username;
+                    } else {
+                        detailAssignedAdmin.style.display = 'none';
+                    }
+
+                    messageThread.innerHTML = '';
+                    if (messages.length === 0) {
+                        messageThread.innerHTML = '<p>No messages in this ticket yet.</p>';
+                    } else {
+                        messages.forEach(msg => {
+                            const messageEntry = document.createElement('div');
+                            messageEntry.classList.add('message-entry');
+                            // Add specific class for sender if needed, e.g., for different background color
+                            if (msg.sender_id === currentUserId) {
+                                messageEntry.classList.add('message-sent-by-me');
+                            } else if (msg.sender_role === 'Admin') {
+                                messageEntry.classList.add('message-sent-by-admin');
+                            }
+
+                            messageEntry.innerHTML = `
+                                <div class="message-meta">
+                                    <span class="message-sender">${msg.sender_username} (${msg.sender_role || 'User'})</span>
+                                    <span> - ${formatRelativeTime(msg.sent_at)}</span>
+                                </div>
+                                <div class="message-content">${msg.message}</div>
+                            `;
+                            messageThread.appendChild(messageEntry);
+                        });
+                        messageThread.scrollTop = messageThread.scrollHeight; // Scroll to bottom
+                    }
+
+                    // Admin controls visibility
+                    if (isAdmin) {
+                        adminDetailControls.style.display = 'flex';
+                        ticketStatusSelect.value = ticket.status; // Set current status in dropdown
+                    } else {
+                        adminDetailControls.style.display = 'none';
+                    }
+
+                } else {
+                    messagesError.textContent = data.error || 'Failed to load ticket details.';
+                    messagesError.style.display = 'block';
+                    ticketDetailView.style.display = 'none'; // Hide detail view on error
+                    if (isAdmin) await fetchAdminTickets(currentFilterStatus);
+                    else await fetchUserTickets();
+                }
+            } catch (err) {
+                console.error('Error viewing ticket detail:', err);
+                messagesError.textContent = 'Network error or server unavailable.';
+                messagesError.style.display = 'block';
+                ticketDetailView.style.display = 'none'; // Hide detail view on error
+                if (isAdmin) await fetchAdminTickets(currentFilterStatus);
+                else await fetchUserTickets();
+            }
+        }
+
+        // --- Event Listeners ---
+
+        // Handle new support ticket submission
+        if (newSupportTicketForm) {
+            newSupportTicketForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                newTicketMessageDiv.style.display = 'none';
+                newTicketErrorDiv.style.display = 'none';
+
+                const subject = ticketSubjectInput.value.trim();
+                const message = ticketMessageTextarea.value.trim();
+
+                if (!subject || !message) {
+                    newTicketErrorDiv.textContent = 'Subject and message cannot be empty.';
+                    newTicketErrorDiv.style.display = 'block';
+                    return;
+                }
+
+                try {
+                    const res = await fetch('/api/support-tickets', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ subject, message })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        newTicketMessageDiv.textContent = data.message;
+                        newTicketMessageDiv.style.display = 'block';
+                        newSupportTicketForm.reset();
+                        await fetchUserTickets(); // Refresh user's ticket list
+                    } else {
+                        newTicketErrorDiv.textContent = data.error || 'Failed to submit ticket.';
+                        newTicketErrorDiv.style.display = 'block';
+                    }
+                } catch (err) {
+                    console.error('Error submitting new ticket:', err);
+                    newTicketErrorDiv.textContent = 'Network error or server unavailable.';
+                    newTicketErrorDiv.style.display = 'block';
+                }
+            });
+        }
+
+        // Handle replying to a ticket
+        if (replyTicketForm) {
+            replyTicketForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                replyMessageResultDiv.style.display = 'none';
+                replyErrorDiv.style.display = 'none';
+
+                const message = replyMessageTextarea.value.trim();
+                if (!message) {
+                    replyErrorDiv.textContent = 'Reply message cannot be empty.';
+                    replyErrorDiv.style.display = 'block';
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`/api/support-tickets/${currentTicketId}/messages`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        replyMessageResultDiv.textContent = data.message;
+                        replyMessageResultDiv.style.display = 'block';
+                        replyMessageTextarea.value = ''; // Clear reply input
+                        await viewTicketDetail(currentTicketId); // Refresh ticket details to show new message
+                    } else {
+                        replyErrorDiv.textContent = data.error || 'Failed to send reply.';
+                        replyErrorDiv.style.display = 'block';
+                    }
+                } catch (err) {
+                    console.error('Error sending reply:', err);
+                    replyErrorDiv.textContent = 'Network error or server unavailable.';
+                    replyErrorDiv.style.display = 'block';
+                }
+            });
+        }
+
+        // Admin: Handle status update
+        if (updateStatusBtn) {
+            updateStatusBtn.addEventListener('click', async () => {
+                const newStatus = ticketStatusSelect.value;
+                if (!newStatus) {
+                    alert('Please select a status.');
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`/api/support-tickets/${currentTicketId}/status`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: newStatus })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        alert(data.message);
+                        await viewTicketDetail(currentTicketId); // Refresh detail view
+                        if (isAdmin) await fetchAdminTickets(currentFilterStatus); // Refresh admin list
+                    } else {
+                        alert('Error updating status: ' + (data.error || 'Failed.'));
+                    }
+                } catch (err) {
+                    console.error('Error updating ticket status:', err);
+                    alert('Network error or server unavailable.');
+                }
+            });
+        }
+
+        // Admin: Filter tickets by status
+        document.querySelectorAll('.admin-ticket-filter button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                document.querySelectorAll('.admin-ticket-filter button').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                currentFilterStatus = e.target.dataset.status;
+                fetchAdminTickets(currentFilterStatus);
+            });
+        });
+
+        // Back button from detail view
+        if (backToTicketsBtn) {
+            backToTicketsBtn.addEventListener('click', () => {
+                ticketDetailView.style.display = 'none';
+                currentTicketId = null;
+                if (isAdmin) {
+                    adminTicketsView.style.display = 'block';
+                    fetchAdminTickets(currentFilterStatus); // Re-fetch to ensure latest state
+                } else {
+                    userNewTicketView.style.display = 'block';
+                    fetchUserTickets(); // Re-fetch user tickets
+                }
+            });
+        }
+
+        // Initial page load logic
+        checkUserRoles();
+    </script>
+</body>
+
+</html>

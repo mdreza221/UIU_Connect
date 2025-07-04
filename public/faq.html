@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - UIU Connect</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+    <div class="header">
+        <h1>Frequently Asked Questions</h1>
+        <a href="/logout">Logout</a>
+    </div>
+
+    <nav class="navbar">
+        <ul>
+            <li><a href="/profile">Home</a></li>
+            <li><a href="/forum">Forum</a></li>
+            <li><a href="/events">Events</a></li>
+            <li><a href="/career">Career Corner</a></li>
+            <li><a href="/alumni">Alumni Network</a></li>
+            <li><a href="/announcements">Announcements</a></li>
+            <li><a href="/inbox">Inbox</a></li>
+            <li><a href="/irc">IRC Chat</a></li>
+            <li><a href="/settings">Settings</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/top-contributors">Top Contributors</a></li>
+            <li id="adminLink" style="display:none;"><a href="/admin">Admin Panel</a></li>
+            <li><a href="/filesharing" id="fileSharingLink">File Sharing</a></li>
+            <li><a href="/activities">My Activities</a></li>
+            <li><a href="/faculty-panel">Faculty Panel</a></li>
+            <li><a href="/support">Support</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h2>General Questions</h2>
+        <p><strong>Q: What is UIU Connect?</strong><br>
+            A: UIU Connect is a community platform for students, faculty, and alumni of UIU to connect, share resources,
+            and discuss topics related to academic and student life.</p>
+
+        <p><strong>Q: How do I create an account?</strong><br>
+            A: You can sign up from the homepage (/) by providing your name, email, username, and a password.</p>
+
+        <p><strong>Q: I forgot my password. What do I do?</strong><br>
+            A: Currently, there is no "Forgot Password" feature. Please contact an administrator for assistance.</p>
+
+        <h2>Forum Questions</h2>
+        <p><strong>Q: How do I post a new topic?</strong><br>
+            A: Navigate to the Forum page, select a section, and you will find an option to create a new topic within
+            that section.</p>
+
+        <p><strong>Q: What is the reputation system?</strong><br>
+            A: The reputation system allows users to gain points by contributing positively to the community (e.g.,
+            posting helpful content, receiving upvotes). It encourages good behavior and helps identify valuable
+            members.</p>
+
+        <p><strong>Q: Can I edit or delete my posts?</strong><br>
+            A: Yes, you can edit or delete your own IRC chat messages and forum posts shortly after you post them.. The
+            original topic post cannot be deleted, only the entire topic.. Admins have permission to edit or delete any
+            message.</p>
+
+        <h2>Access Roles and Permissions</h2>
+        <p><strong>Q: What are the different user roles?</strong><br>
+            A: UIU Connect uses several roles to define user permissions:</p>
+        <ul>
+            <li><strong>Student:</strong> This is the default role for new users. Students can post in most forum
+                sections, send private messages, and use all general features.</li>
+            <li><strong>Faculty:</strong> Faculty members can post official announcements, post events, and post job
+                opportunities. They can also manage (edit/delete/lock) their own forum topics and delete their own
+                shared files.</li>
+            <li><strong>Alumni:</strong> Alumni can create public profiles to connect with other alumni and students.
+                They can also post job opportunities in the Career Corner.</li>
+            <li><strong>Admin:</strong> This role has full administrative control over the platform. Admins can manage
+                all users and roles, control forum section access, post and delete any announcement, and delete any
+                forum topic.</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        <p>UIU Connect By END</p>
+    </div>
+
+    <script>
+        async function checkAdminStatus() {
+            try {
+                const res = await fetch('/user-data');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.user.roles && data.user.roles.includes('Admin')) {
+                        document.getElementById('adminLink').style.display = 'inline';
+                    }
+                    if (data.user.roles && (data.user.roles.includes('Faculty') || data.user.roles.includes('Admin'))) {
+                        document.getElementById('facultyLink').style.display = 'inline';
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking admin status:', error);
+            }
+        }
+        checkAdminStatus();
+    </script>
+</body>
+
+</html>

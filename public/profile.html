@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - UIU Connect</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body>
+    <div class="header">
+        <h1>Welcome To UIU Connect, <span id="usernameDisplay">User</span>!</h1>
+        <div style="display: flex; align-items: center;">
+            <div class="notification-icon-container">
+                <i class="fas fa-bell" id="notificationBell"></i>
+                <span class="notification-badge" id="notificationBadge"></span>
+                <div class="notifications-dropdown" id="notificationsDropdown">
+                    <h3>Notifications</h3>
+                    <div id="notificationsList">
+                        <p class="no-notifications">No new notifications.</p>
+                    </div>
+                    <button class="mark-all-read-btn" id="markAllReadBtn" style="display:none;">Mark All As
+                        Read</button>
+                </div>
+            </div>
+            <a href="/logout" class="action-link-danger">Logout</a>
+        </div>
+    </div>
+
+
+    <nav class="navbar">
+        <ul>
+            <li><a href="/profile">Home</a></li>
+            <li><a href="/forum">Forum</a></li>
+            <li><a href="/events">Events</a></li>
+            <li><a href="/career">Career Corner</a></li>
+            <li><a href="/alumni">Alumni Network</a></li>
+            <li><a href="/announcements">Announcements</a></li>
+            <li><a href="/inbox">Inbox</a></li>
+            <li><a href="/irc">IRC Chat</a></li>
+            <li><a href="/settings">Settings</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/top-contributors">Top Contributors</a></li>
+            <li id="adminLink" style="display:none;"><a href="/admin">Admin Panel</a></li>
+            <li><a href="/filesharing" id="fileSharingLink">File Sharing</a></li>
+            <li><a href="/activities">My Activities</a></li>
+            <li><a href="/faculty-panel">Faculty Panel</a></li>
+            <li><a href="/support">Support</a></li>
+        </ul>
+    </nav>
+
+
+    <div class="container">
+        <h2>Your Profile Information</h2>
+        <div id="profileInfo">
+            <p><strong>Username:</strong> <span id="profileUsername">Loading...</span></p>
+            <p><strong>Name:</strong> <span id="profileName">Loading...</span></p>
+            <p><strong>Email:</strong> <span id="profileEmail">Loading...</span></p>
+            <p><strong>Reputation Points:</strong> <span id="profileReputation">Loading...</span></p>
+            <p><strong>Roles:</strong> <span id="profileRoles">Loading...</span></p>
+        </div>
+        <div id="profileError" class="error" style="display:none;"></div>
+
+        <h3>Quick Links:</h3>
+        <ul>
+            <li><a href="/forum" class="action-link-danger">Browse Forum Discussions</a></li>
+            <li><a href="/inbox" class="action-link-danger">Check Private Messages</a></li>
+            <li><a href="/settings" class="action-link-danger">Manage Your Account Settings</a></li>
+        </ul>
+
+        <div class="poll-section" id="pollContainer" style="display:none;">
+            <h2>Featured Poll</h2>
+            <div id="pollDisplay">
+                <p>Loading poll...</p>
+            </div>
+            <div id="pollMessage" class="message" style="display:none;"></div>
+            <div id="pollError" class="error" style="display:none;"></div>
+        </div>
+        </div>
+
+    <div class="footer">
+        <p>UIU Connect By END</p>
+    </div>
+
+    <script>
+        const pollContainer = document.getElementById('pollContainer');
+        const pollDisplay = document.getElementById('pollDisplay');
+        const pollMessage = document.getElementById('pollMessage');
+        const pollError = document.getElementById('pollError');
+
+        async function fetchActivePoll() {
+            pollDisplay.innerHTML = '<p>Loading poll...</p>';
+            pollContainer.style.display = 'none';
+            pollMessage.style.display = 'none';
+            pollError.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/polls/active');
+                const pollData = await res.json();
+
+                if (res.ok) {
+                    pollContainer.style.display = 'block';
+                    renderPoll(pollData);
+                } else if (res.status === 404) {
+                    // No active poll, hide the container
+                    pollContainer.style.display = 'none';
+                } else {
+                    pollContainer.style.display = 'block';
+                    pollError.textContent = pollData.error || 'Failed to load poll.';
+                    pollError.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Error fetching active poll:', err);
+                pollContainer.style.display = 'block';
+                pollError.textContent = 'Network error or server unavailable.';
+                pollError.style.display = 'block';
+            }
+        }
+
+        function renderPoll(pollData) {
+            pollDisplay.innerHTML = `<h3>${pollData.question}</h3>`;
+
+            if (pollData.has_voted) {
+                // User has voted, show results
+                renderPollResults(pollData);
+            } else {
+                // User has not voted, show options to vote
+                renderPollVoting(pollData);
+            }
+        }
+
+        function renderPollVoting(pollData) {
+            const optionsList = document.createElement('ul');
+            optionsList.classList.add('poll-options');
+            pollData.options.forEach(option => {
+                const optionItem = document.createElement('li');
+                optionItem.classList.add('poll-option-item');
+                optionItem.textContent = option.text;
+                optionItem.dataset.optionId = option.id;
+                optionItem.addEventListener('click', () => submitVote(pollData.id, option.id));
+                optionsList.appendChild(optionItem);
+            });
+            pollDisplay.appendChild(optionsList);
+        }
+
+        function renderPollResults(pollData) {
+            const resultsDiv = document.createElement('div');
+            resultsDiv.classList.add('poll-results');
+
+            const totalVotes = pollData.total_votes;
+
+            pollData.options.forEach(option => {
+                const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
+                const resultBar = document.createElement('div');
+                resultBar.classList.add('poll-result-bar');
+
+                const resultFill = document.createElement('div');
+                resultFill.classList.add('poll-result-fill');
+                resultFill.style.width = `${percentage.toFixed(1)}%`;
+
+                const resultText = document.createElement('span');
+                resultText.classList.add('poll-result-text');
+                resultText.textContent = `${option.text} (${option.votes} votes)`;
+
+                resultFill.appendChild(resultText);
+                resultBar.appendChild(resultFill);
+                resultsDiv.appendChild(resultBar);
+            });
+
+            const totalVotesText = document.createElement('div');
+            totalVotesText.classList.add('poll-total-votes');
+            totalVotesText.textContent = `Total Votes: ${totalVotes}`;
+            resultsDiv.appendChild(totalVotesText);
+
+            pollDisplay.appendChild(resultsDiv);
+        }
+
+        async function submitVote(pollId, optionId) {
+            if (!confirm('Are you sure you want to cast this vote? You cannot change it later.')) {
+                return;
+            }
+            pollMessage.style.display = 'none';
+            pollError.style.display = 'none';
+
+            try {
+                const res = await fetch(`/api/polls/${pollId}/vote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ optionId })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    pollMessage.textContent = data.message;
+                    pollMessage.style.display = 'block';
+                    // Re-fetch the poll to show the updated results
+                    fetchActivePoll();
+                } else {
+                    pollError.textContent = data.error || 'Failed to cast vote.';
+                    pollError.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Error submitting vote:', err);
+                pollError.textContent = 'Network error or server unavailable.';
+                pollError.style.display = 'block';
+            }
+        }
+
+        async function fetchProfileData() {
+            try {
+                const res = await fetch('/user-data');
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('usernameDisplay').textContent = data.user.username;
+                    document.getElementById('profileUsername').textContent = data.user.username;
+                    document.getElementById('profileName').textContent = data.user.name;
+                    document.getElementById('profileEmail').textContent = data.user.email;
+                    document.getElementById('profileReputation').textContent = data.user.reputation_points;
+                    document.getElementById('profileRoles').textContent = data.user.roles.join(', ') || 'None';
+
+                    if (data.user.roles && data.user.roles.includes('Admin')) {
+                        document.getElementById('adminLink').style.display = 'inline';
+                    }
+                } else {
+                    document.getElementById('profileError').textContent = 'Failed to load profile data.';
+                    document.getElementById('profileError').style.display = 'block';
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('Error fetching profile data:', error);
+                document.getElementById('profileError').textContent = 'Network error or server unavailable.';
+                document.getElementById('profileError').style.display = 'block';
+                window.location.href = '/';
+            }
+            // Call the new poll function here
+            fetchActivePoll();
+        }
+        fetchProfileData();
+    </script>
+    <script src="/notifications.js"></script>
+</body>
+
+</html>

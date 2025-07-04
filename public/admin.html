@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - UIU Connect</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: left;
+            color: var(--text-color-primary);
+        }
+
+        th {
+            background-color: var(--header-bg-color);
+            font-weight: bold;
+        }
+
+        td {
+            background-color: var(--primary-bg-color);
+        }
+
+        .user-roles-cell,
+        .section-roles-cell {
+            min-width: 150px;
+        }
+
+        .user-roles-cell span,
+        .section-roles-cell span {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: var(--text-color-primary);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin: 2px;
+            white-space: nowrap;
+        }
+
+        /* Styles for the role selector pop-up (reused for sections) */
+        .role-selector-container {
+            display: none;
+            position: fixed;
+            background-color: var(--secondary-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            min-width: 200px;
+        }
+
+        .role-selector-container label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-color-secondary);
+        }
+
+        .role-selector-container input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .role-selector-container button {
+            margin-top: 10px;
+            margin-right: 5px;
+            padding: 5px 10px;
+            font-size: 0.85em;
+        }
+
+        .role-selector-container .cancel-button {
+            background-color: #f44336;
+        }
+
+        .role-selector-container .cancel-button:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Styles for new announcement and section management forms */
+        .management-section {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .management-section h2 {
+            margin-top: 0;
+            color: var(--accent-color);
+        }
+
+        /* NEW: Filter Option styles */
+        .filter-options {
+            margin-bottom: 20px;
+        }
+
+        .filter-options label {
+            margin-right: 10px;
+            color: var(--text-color-secondary);
+        }
+
+        .filter-options select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--primary-bg-color);
+            color: var(--text-color-primary);
+            font-size: 1em;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23bcaaa4%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-24.6%200L146.2%20202.7%2024.6%2069.4a17.6%2017.6%200%200%200-24.6%2024.6l129.2%20129.3c.8.8%201.8%201.2%202.8%201.2s2-.4%202.8-1.2L287%2094c17.6-17.6%2017.6-46.1.1-63.7z%22%2F%3E%3C%2Fsvg%3E');
+            /* Custom arrow */
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Admin Panel</h1>
+        <a href="/logout" class="action-link-danger">Logout</a>
+    </div>
+
+
+    <nav class="navbar">
+        <ul>
+            <li><a href="/profile">Home</a></li>
+            <li><a href="/forum">Forum</a></li>
+            <li><a href="/events">Events</a></li>
+            <li><a href="/career">Career Corner</a></li>
+            <li><a href="/alumni">Alumni Network</a></li>
+            <li><a href="/announcements">Announcements</a></li>
+            <li><a href="/inbox">Inbox</a></li>
+            <li><a href="/irc">IRC Chat</a></li>
+            <li><a href="/settings">Settings</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/top-contributors">Top Contributors</a></li>
+            <li id="adminLink" style="display:none;"><a href="/admin">Admin Panel</a></li>
+            <li><a href="/filesharing" id="fileSharingLink">File Sharing</a></li>
+            <li><a href="/activities">My Activities</a></li>
+            <li><a href="/faculty-panel">Faculty Panel</a></li>
+            <li><a href="/support">Support</a></li>
+        </ul>
+    </nav>
+
+
+    <div class="container">
+        <h2>Manage Users & Roles</h2>
+
+        <div class="filter-options">
+            <label for="roleFilter">Filter by Role:</label>
+            <select id="roleFilter">
+                <option value="all">All Roles</option>
+            </select>
+        </div>
+
+        <table id="userTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Reputation</th>
+                    <th>Roles</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <div id="adminMessage" class="message" style="display:none;"></div>
+        <div id="adminError" class="error" style="display:none;"></div>
+
+        <div class="management-section">
+            <h2>Manage Forum Section Access</h2>
+            <table id="sectionPermissionsTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Section Name</th>
+                        <th>Description</th>
+                        <th>Allowed Roles</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+            <div id="sectionPermissionsMessage" class="message" style="display:none;"></div>
+            <div id="sectionPermissionsError" class="error" style="display:none;"></div>
+        </div>
+
+
+        <div class="management-section">
+            <h2>Post New Announcement</h2>
+            <form id="postAnnouncementForm">
+                <label for="announcementTitle">Title:</label>
+                <input type="text" id="announcementTitle" required>
+                <label for="announcementContent">Content:</label>
+                <textarea id="announcementContent" rows="8" required></textarea>
+                <button type="submit">Post Announcement</button>
+                <div id="announcementMessage" class="message" style="display:none;"></div>
+                <div id="announcementError" class="error" style="display:none;"></div>
+            </form>
+        </div>
+
+        <div class="management-section">
+            <h2>Scrape UIU Notices</h2>
+            <button id="scrapeNoticesBtn">Trigger UIU Notice Scrape</button>
+            <div id="scrapeMessage" class="message" style="display:none;"></div>
+            <div id="scrapeError" class="error" style="display:none;"></div>
+            <p style="font-size:0.8em; color:var(--text-color-secondary); margin-top:10px;">
+                Fetches latest notices from uiu.ac.bd/notice/ and posts them as announcements.
+                <br>Be mindful of website's terms of service and `robots.txt`.
+            </p>
+        </div>
+
+        <div class="management-section">
+            <h2>Create a New Poll</h2>
+            <form id="createPollForm">
+                <label for="pollQuestion">Poll Question:</label>
+                <input type="text" id="pollQuestion" required>
+
+                <label>Options (at least 2):</label>
+                <div id="pollOptionsContainer">
+                    <input type="text" class="poll-option-input" placeholder="Option 1" required>
+                    <input type="text" class="poll-option-input" placeholder="Option 2" required>
+                </div>
+                <button type="button" id="addOptionBtn">Add Option</button>
+                <button type="submit">Create Poll</button>
+                <div id="pollMessage" class="message" style="display:none;"></div>
+                <div id="pollError" class="error" style="display:none;"></div>
+            </form>
+        </div>
+
+        <div class="management-section">
+            <h2>Manage Active Polls</h2>
+            <table id="activePollsTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Question</th>
+                        <th>Status</th>
+                        <th>Created By</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+            <div id="managePollsMessage" class="message" style="display:none;"></div>
+            <div id="managePollsError" class="error" style="display:none;"></div>
+        </div>
+        </div>
+
+    <div class="footer">
+        <p>UIU Connect By END</p>
+    </div>
+
+    <script>
+        let allAvailableRoles = [];
+        let allUsers = [];
+        let currentRoleSelector = null;
+        let currentSectionRoleSelector = null;
+
+        // --- Core Fetching Functions ---
+        async function fetchAllRoles() {
+            console.log('Admin Panel: fetchAllRoles started...');
+            try {
+                const res = await fetch('/api/roles');
+                const roles = await res.json();
+                if (res.ok) {
+                    allAvailableRoles = roles;
+                    console.log('Admin Panel: Fetched roles successfully:', allAvailableRoles);
+                    populateRoleFilter();
+                } else {
+                    console.error('Admin Panel: Failed to load available roles from API:', roles.error);
+                }
+            } catch (error) {
+                console.error('Admin Panel: Network error fetching roles for admin panel:', error);
+            }
+        }
+
+        // Function to populate the role filter dropdown for users
+        function populateRoleFilter() {
+            const roleFilter = document.getElementById('roleFilter');
+            roleFilter.innerHTML = '<option value="all">All Roles</option>';
+            allAvailableRoles.forEach(role => {
+                const option = document.createElement('option');
+                option.value = role.name;
+                option.textContent = role.name;
+                roleFilter.appendChild(option);
+            });
+            // Add event listener for filtering
+            roleFilter.addEventListener('change', filterUsersByRole);
+        }
+
+        async function fetchUsers() {
+            const userTableBody = document.querySelector('#userTable tbody');
+            if (!userTableBody) { console.error('Admin Panel: Error: #userTable tbody not found!'); return; }
+            userTableBody.innerHTML = '<tr><td colspan="7">Loading users...</td></tr>';
+            document.getElementById('adminMessage').style.display = 'none';
+            document.getElementById('adminError').style.display = 'none';
+            console.log('Admin Panel: Fetching users started...');
+
+            try {
+                const res = await fetch('/admin/users');
+                const users = await res.json();
+                if (res.ok) {
+                    allUsers = users;
+                    console.log('Admin Panel: Fetched users successfully:', allUsers);
+                    displayUsers(allUsers);
+                } else {
+                    document.getElementById('adminError').textContent = users.error || 'Failed to load users.';
+                    document.getElementById('adminError').style.display = 'block';
+                    console.error('Admin Panel: API Error fetching users:', users.error);
+                }
+            } catch (error) {
+                console.error('Admin Panel: Network error fetching users:', error);
+                document.getElementById('adminError').textContent = 'Network error or server unavailable.';
+                document.getElementById('adminError').style.display = 'block';
+            }
+        }
+
+        // Function to display users (can be filtered)
+        function displayUsers(usersToDisplay) {
+            const userTableBody = document.querySelector('#userTable tbody');
+            userTableBody.innerHTML = '';
+            if (usersToDisplay.length === 0) {
+                userTableBody.innerHTML = '<tr><td colspan="7">No users found matching the filter.</td></tr>';
+            } else {
+                usersToDisplay.forEach(user => {
+                    const row = userTableBody.insertRow();
+                    row.insertCell().textContent = user.id;
+                    row.insertCell().textContent = user.username;
+                    row.insertCell().textContent = user.name;
+                    row.insertCell().textContent = user.email;
+                    row.insertCell().textContent = user.reputation_points;
+
+                    const rolesCell = row.insertCell();
+                    const rolesDiv = document.createElement('div');
+                    rolesDiv.className = 'user-roles-cell';
+                    if (Array.isArray(user.roles)) {
+                        user.roles.forEach(roleName => {
+                            const span = document.createElement('span');
+                            span.textContent = roleName;
+                            rolesDiv.appendChild(span);
+                        });
+                    } else {
+                        console.warn(`Admin Panel: User ${user.username} has no roles array or it's not an array.`);
+                        rolesDiv.textContent = 'No roles';
+                    }
+                    rolesCell.appendChild(rolesDiv);
+
+                    const actionsCell = row.insertCell();
+                    const editRolesBtn = document.createElement('button');
+                    editRolesBtn.textContent = 'Edit Roles';
+                    editRolesBtn.onclick = (event) => {
+                        console.log('Admin Panel: "Edit Roles" button clicked for user ID:', user.id);
+                        showRoleSelector(user.id, user.roles, event.target, 'user');
+                    };
+                    actionsCell.appendChild(editRolesBtn);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.onclick = () => deleteUser(user.id, user.username);
+                    actionsCell.appendChild(deleteBtn);
+                });
+            }
+        }
+
+        // Function to filter users
+        function filterUsersByRole() {
+            const selectedRole = document.getElementById('roleFilter').value;
+            let filtered = [];
+
+            if (selectedRole === 'all') {
+                filtered = allUsers;
+            } else {
+                filtered = allUsers.filter(user => user.roles.includes(selectedRole));
+            }
+            displayUsers(filtered);
+        }
+
+        // --- Role Selector Logic (Shared for Users and Sections) ---
+        function showRoleSelector(id, currentRoles, triggerButton, type) {
+            console.log(`Admin Panel: showRoleSelector called for ${type} ID:`, id, 'Current Roles:', currentRoles);
+            console.log('Admin Panel: All Available Roles:', allAvailableRoles);
+
+            if (currentRoleSelector || currentSectionRoleSelector) {
+                if (currentRoleSelector) currentRoleSelector.remove();
+                if (currentSectionRoleSelector) currentSectionRoleSelector.remove();
+                currentRoleSelector = null;
+                currentSectionRoleSelector = null;
+            }
+
+            const selectorDiv = document.createElement('div');
+            selectorDiv.className = 'role-selector-container';
+
+            if (!Array.isArray(allAvailableRoles) || allAvailableRoles.length === 0) {
+                console.error('Admin Panel: Error: allAvailableRoles is empty. Cannot create checkboxes.');
+                selectorDiv.textContent = 'Error: No roles loaded. Check console.';
+            } else {
+                allAvailableRoles.forEach(role => {
+                    const label = document.createElement('label');
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = role.name;
+                    checkbox.checked = Array.isArray(currentRoles) && currentRoles.includes(role.name);
+                    label.appendChild(checkbox);
+                    label.appendChild(document.createTextNode(role.name));
+                    selectorDiv.appendChild(label);
+                });
+            }
+
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = 'Save';
+            if (type === 'user') {
+                saveBtn.onclick = () => saveUserRoles(id, selectorDiv);
+            } else if (type === 'section') {
+                saveBtn.onclick = () => saveSectionPermissions(id, selectorDiv);
+            }
+            selectorDiv.appendChild(saveBtn);
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.className = 'cancel-button';
+            cancelBtn.onclick = () => selectorDiv.remove();
+            selectorDiv.appendChild(cancelBtn);
+
+            if (triggerButton && triggerButton.getBoundingClientRect) {
+                const rect = triggerButton.getBoundingClientRect();
+                selectorDiv.style.position = 'fixed';
+                selectorDiv.style.left = (rect.left + rect.width + 10) + 'px';
+                selectorDiv.style.top = rect.top + 'px';
+                selectorDiv.style.display = 'block';
+            } else {
+                console.warn('Admin Panel: Trigger button invalid, positioning role selector at fixed top-left.');
+                selectorDiv.style.position = 'fixed';
+                selectorDiv.style.left = '10px';
+                selectorDiv.style.top = '10px';
+                selectorDiv.style.display = 'block';
+            }
+
+            document.body.appendChild(selectorDiv);
+            if (type === 'user') currentRoleSelector = selectorDiv;
+            else if (type === 'section') currentSectionRoleSelector = selectorDiv;
+            console.log(`Admin Panel: ${type} role selector appended to body. Check Elements tab.`);
+        }
+
+        // --- Save Functions for User Roles ---
+        async function saveUserRoles(userId, selectorDiv) {
+            console.log('Admin Panel: saveUserRoles called for userId:', userId);
+            const selectedRoles = Array.from(selectorDiv.querySelectorAll('input[type="checkbox"]:checked'))
+                .map(checkbox => checkbox.value);
+            console.log('Admin Panel: Selected roles to save:', selectedRoles);
+
+            const adminMessage = document.getElementById('adminMessage');
+            const adminError = document.getElementById('adminError');
+            adminMessage.style.display = 'none';
+            adminError.style.display = 'none';
+
+            try {
+                const res = await fetch(`/admin/users/${userId}/roles`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roleNames: selectedRoles })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    adminMessage.textContent = data.message;
+                    adminMessage.style.display = 'block';
+                    selectorDiv.remove();
+                    currentRoleSelector = null;
+                    fetchUsers();
+                    console.log('Admin Panel: User roles saved successfully.');
+                } else {
+                    adminError.textContent = data.error || 'Failed to update roles.';
+                    adminError.style.display = 'block';
+                    console.error('Admin Panel: API Error saving user roles:', data.error);
+                }
+            } catch (error) {
+                console.error('Admin Panel: Network error saving user roles:', error);
+                adminError.textContent = 'Network error or server unavailable.';
+                adminError.style.display = 'block';
+            }
+        }
+
+        async function deleteUser(userId, username) {
+            if (!confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) return;
+            const adminMessage = document.getElementById('adminMessage');
+            const adminError = document.getElementById('adminError');
+            adminMessage.style.display = 'none';
+            adminError.style.display = 'none';
+            console.log('Admin Panel: Attempting to delete user:', userId);
+
+            try {
+                const res = await fetch(`/admin/users/${userId}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    adminMessage.textContent = data.message;
+                    adminMessage.style.display = 'block';
+                    fetchUsers();
+                    console.log('Admin Panel: User deleted successfully.');
+                } else {
+                    adminError.textContent = data.error || 'Failed to delete user.';
+                    adminError.style.display = 'block';
+                    console.error('Admin Panel: API Error deleting user:', data.error);
+                }
+            } catch (error) {
+                console.error('Admin Panel: Network error deleting user:', error);
+                adminError.textContent = 'Network error or server unavailable.';
+                adminError.style.display = 'block';
+            }
+        }
+
+        // --- New Announcement Posting Logic ---
+        const postAnnouncementForm = document.getElementById('postAnnouncementForm');
+        const announcementTitleInput = document.getElementById('announcementTitle');
+        const announcementContentTextarea = document.getElementById('announcementContent');
+        const announcementMessageDiv = document.getElementById('announcementMessage');
+        const announcementErrorDiv = document.getElementById('announcementError');
+
+        postAnnouncementForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = announcementTitleInput.value;
+            const content = announcementContentTextarea.value;
+
+            announcementMessageDiv.style.display = 'none';
+            announcementErrorDiv.style.display = 'none';
+
+            if (!title.trim() || !content.trim()) {
+                announcementErrorDiv.textContent = 'Title and content cannot be empty for an announcement.';
+                announcementErrorDiv.style.display = 'block';
+                return;
+            }
+
+            console.log('Admin Panel: Attempting to post announcement...');
+            try {
+                const res = await fetch('/api/announcements', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, content })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    announcementMessageDiv.textContent = data.message || 'Announcement posted successfully!';
+                    announcementMessageDiv.style.display = 'block';
+                    postAnnouncementForm.reset();
+                    console.log('Admin Panel: Announcement posted successfully.');
+                } else {
+                    announcementErrorDiv.textContent = data.error || 'Failed to post announcement.';
+                    announcementErrorDiv.style.display = 'block';
+                    console.error('Admin Panel: API Error posting announcement:', data.error);
+                }
+            } catch (err) {
+                console.error('Admin Panel: Network error posting announcement:', err);
+                announcementErrorDiv.textContent = 'Network error or server unavailable.';
+                announcementErrorDiv.style.display = 'block';
+            }
+        });
+
+        // --- UIU Notice Scraper Trigger Logic ---
+        const scrapeNoticesBtn = document.getElementById('scrapeNoticesBtn');
+        const scrapeMessageDiv = document.getElementById('scrapeMessage');
+        const scrapeErrorDiv = document.getElementById('scrapeError');
+
+        if (scrapeNoticesBtn) {
+            scrapeNoticesBtn.addEventListener('click', async () => {
+                scrapeMessageDiv.style.display = 'none';
+                scrapeErrorDiv.style.display = 'none';
+                scrapeNoticesBtn.disabled = true;
+                scrapeNoticesBtn.textContent = 'Scraping...';
+                console.log('Admin Panel: Triggering UIU notice scrape...');
+
+                try {
+                    const res = await fetch('/admin/scrape-uiu-notices', { method: 'POST' });
+                    const data = await res.json();
+                    if (res.ok) {
+                        scrapeMessageDiv.textContent = data.message;
+                        scrapeMessageDiv.style.display = 'block';
+                        console.log('Admin Panel: Scrape successful:', data.message);
+                    } else {
+                        scrapeErrorDiv.textContent = data.error || 'Failed to trigger scrape.';
+                        scrapeErrorDiv.style.display = 'block';
+                        console.error('Admin Panel: API Error triggering scrape:', data.error);
+                    }
+                } catch (err) {
+                    console.error('Admin Panel: Network error triggering scrape:', err);
+                    scrapeErrorDiv.textContent = 'Network error or server unavailable.';
+                    scrapeErrorDiv.style.display = 'block';
+                } finally {
+                    scrapeNoticesBtn.disabled = false;
+                    scrapeNoticesBtn.textContent = 'Trigger UIU Notice Scrape';
+                }
+            });
+        }
+
+        // --- Forum Section Access Management Logic ---
+        const sectionPermissionsTableBody = document.querySelector('#sectionPermissionsTable tbody');
+        const sectionPermissionsMessageDiv = document.getElementById('sectionPermissionsMessage');
+        const sectionPermissionsErrorDiv = document.getElementById('sectionPermissionsError');
+
+        async function fetchSectionPermissions() {
+            if (!sectionPermissionsTableBody) { console.error('Admin Panel: Error: #sectionPermissionsTable tbody not found!'); return; }
+            sectionPermissionsTableBody.innerHTML = '<tr><td colspan="5">Loading section permissions...</td></tr>';
+            sectionPermissionsMessageDiv.style.display = 'none';
+            sectionPermissionsErrorDiv.style.display = 'none';
+            console.log('Admin Panel: Fetching section permissions started...');
+
+            try {
+                const res = await fetch('/api/admin/forum-section-permissions');
+                const sections = await res.json();
+                if (res.ok) {
+                    console.log('Admin Panel: Fetched section permissions successfully:', sections);
+                    sectionPermissionsTableBody.innerHTML = '';
+                    if (sections.length === 0) {
+                        sectionPermissionsTableBody.innerHTML = '<tr><td colspan="5">No forum sections found.</td></tr>';
+                    } else {
+                        sections.forEach(section => {
+                            const row = sectionPermissionsTableBody.insertRow();
+                            row.insertCell().textContent = section.id;
+                            row.insertCell().textContent = section.name;
+                            row.insertCell().textContent = section.description;
+
+                            const allowedRolesCell = row.insertCell();
+                            const rolesDiv = document.createElement('div');
+                            rolesDiv.className = 'section-roles-cell';
+                            if (Array.isArray(section.allowed_roles)) {
+                                section.allowed_roles.forEach(roleName => {
+                                    const span = document.createElement('span');
+                                    span.textContent = roleName;
+                                    rolesDiv.appendChild(span);
+                                });
+                            } else {
+                                console.warn(`Admin Panel: Section ${section.name} has no allowed_roles array or it's not an array.`);
+                                rolesDiv.textContent = 'No roles assigned';
+                            }
+                            allowedRolesCell.appendChild(rolesDiv);
+
+                            const actionsCell = row.insertCell();
+                            const editAccessBtn = document.createElement('button');
+                            editAccessBtn.textContent = 'Edit Access';
+                            editAccessBtn.onclick = (event) => {
+                                console.log('Admin Panel: "Edit Access" button clicked for section ID:', section.id);
+                                showRoleSelector(section.id, section.allowed_roles, event.target, 'section');
+                            };
+                            actionsCell.appendChild(editAccessBtn);
+                        });
+                    }
+                } else {
+                    sectionPermissionsErrorDiv.textContent = sections.error || 'Failed to load section permissions.';
+                    sectionPermissionsErrorDiv.style.display = 'block';
+                    console.error('Admin Panel: API Error fetching section permissions:', sections.error);
+                }
+            } catch (error) {
+                console.error('Admin Panel: Network error fetching section permissions:', error);
+                sectionPermissionsErrorDiv.textContent = 'Network error or server unavailable.';
+                sectionPermissionsErrorDiv.style.display = 'block';
+            }
+        }
+
+        async function saveSectionPermissions(sectionId, selectorDiv) {
+            console.log('Admin Panel: saveSectionPermissions called for sectionId:', sectionId);
+            const selectedRoles = Array.from(selectorDiv.querySelectorAll('input[type="checkbox"]:checked'))
+                .map(checkbox => checkbox.value);
+            console.log('Admin Panel: Selected roles for section:', selectedRoles);
+
+            sectionPermissionsMessageDiv.style.display = 'none';
+            sectionPermissionsErrorDiv.style.display = 'none';
+
+            try {
+                const res = await fetch(`/api/admin/forum-section-permissions/${sectionId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ allowedRoleNames: selectedRoles })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    sectionPermissionsMessageDiv.textContent = data.message;
+                    sectionPermissionsMessageDiv.style.display = 'block';
+                    selectorDiv.remove();
+                    currentSectionRoleSelector = null;
+                    fetchSectionPermissions();
+                    console.log('Admin Panel: Section permissions saved successfully.');
+                } else {
+                    sectionPermissionsErrorDiv.textContent = data.error || 'Failed to update section permissions.';
+                    sectionPermissionsErrorDiv.style.display = 'block';
+                    console.error('Admin Panel: API Error saving section permissions:', data.error);
+                }
+            } catch (error) {
+                console.error('Admin Panel: Network error saving section permissions:', error);
+                sectionPermissionsErrorDiv.textContent = 'Network error or server unavailable.';
+                sectionPermissionsErrorDiv.style.display = 'block';
+            }
+        }
+
+        // --- NEW: Poll Management Logic ---
+        const createPollForm = document.getElementById('createPollForm');
+        const pollOptionsContainer = document.getElementById('pollOptionsContainer');
+        const addOptionBtn = document.getElementById('addOptionBtn');
+        const pollMessageDiv = document.getElementById('pollMessage');
+        const pollErrorDiv = document.getElementById('pollError');
+        const activePollsTableBody = document.querySelector('#activePollsTable tbody');
+        const managePollsMessageDiv = document.getElementById('managePollsMessage');
+        const managePollsErrorDiv = document.getElementById('managePollsError');
+
+        // Function to add new option input field
+        if (addOptionBtn) {
+            addOptionBtn.addEventListener('click', () => {
+                const newInput = document.createElement('input');
+                newInput.type = 'text';
+                newInput.className = 'poll-option-input';
+                newInput.placeholder = `Option ${pollOptionsContainer.children.length + 1}`;
+                newInput.required = true;
+                pollOptionsContainer.appendChild(newInput);
+            });
+        }
+
+        // Handle poll creation form submission
+        if (createPollForm) {
+            createPollForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                pollMessageDiv.style.display = 'none';
+                pollErrorDiv.style.display = 'none';
+
+                const question = document.getElementById('pollQuestion').value;
+                const options = Array.from(document.querySelectorAll('.poll-option-input'))
+                    .map(input => input.value.trim())
+                    .filter(value => value !== '');
+
+                if (options.length < 2) {
+                    pollErrorDiv.textContent = 'Please provide at least two options.';
+                    pollErrorDiv.style.display = 'block';
+                    return;
+                }
+
+                try {
+                    const res = await fetch('/api/admin/polls', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ question, options })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        pollMessageDiv.textContent = data.message;
+                        pollMessageDiv.style.display = 'block';
+                        createPollForm.reset();
+                        pollOptionsContainer.innerHTML = `
+                        <input type="text" class="poll-option-input" placeholder="Option 1" required>
+                        <input type="text" class="poll-option-input" placeholder="Option 2" required>
+                    `;
+                        fetchActivePolls(); // Refresh the list of active polls
+                    } else {
+                        pollErrorDiv.textContent = data.error || 'Failed to create poll.';
+                        pollErrorDiv.style.display = 'block';
+                    }
+                } catch (err) {
+                    console.error('Error creating poll:', err);
+                    pollErrorDiv.textContent = 'Network error or server unavailable.';
+                    pollErrorDiv.style.display = 'block';
+                }
+            });
+        }
+
+        // Function to fetch and display active polls for management
+        async function fetchActivePolls() {
+            activePollsTableBody.innerHTML = '<tr><td colspan="5">Loading polls...</td></tr>';
+            managePollsErrorDiv.style.display = 'none';
+
+            try {
+                // Fetch the active poll using the user API, then manage it.
+                // You could create a separate admin endpoint if you need to list all polls, active or not.
+                const res = await fetch('/api/polls/active');
+                const data = await res.json();
+
+                activePollsTableBody.innerHTML = '';
+
+                if (res.ok) {
+                    const poll = data;
+                    const row = activePollsTableBody.insertRow();
+                    row.insertCell().textContent = poll.id;
+                    row.insertCell().textContent = poll.question;
+                    row.insertCell().textContent = 'Active';
+                    row.insertCell().textContent = 'Admin'; // Placeholder, you could fetch the creator's username
+                    const actionsCell = row.insertCell();
+                    actionsCell.innerHTML = `
+                    <button class="action-link-danger" onclick="deactivatePoll(${poll.id})">Deactivate</button>
+                `;
+                } else if (res.status === 404) {
+                    activePollsTableBody.innerHTML = '<tr><td colspan="5">No active polls found.</td></tr>';
+                } else {
+                    managePollsErrorDiv.textContent = data.error || 'Failed to load active polls.';
+                    managePollsErrorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Error fetching active polls for admin:', err);
+                managePollsErrorDiv.textContent = 'Network error or server unavailable.';
+                managePollsErrorDiv.style.display = 'block';
+            }
+        }
+
+        // Function to deactivate a poll
+        async function deactivatePoll(pollId) {
+            if (!confirm('Are you sure you want to deactivate this poll? It will no longer be visible to users.')) {
+                return;
+            }
+            try {
+                const res = await fetch(`/api/admin/polls/${pollId}/deactivate`, { method: 'PUT' });
+                const data = await res.json();
+                if (res.ok) {
+                    managePollsMessageDiv.textContent = data.message;
+                    managePollsMessageDiv.style.display = 'block';
+                    fetchActivePolls(); // Refresh the list
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to deactivate poll.'));
+                }
+            } catch (err) {
+                console.error('Error deactivating poll:', err);
+                alert('Network error.');
+            }
+        }
+
+        // --- Initial loads for Admin Panel ---
+        async function initAdminPanel() {
+            console.log('Admin Panel: Initializing admin panel...');
+            await fetchAllRoles();
+            await fetchUsers();
+            await fetchSectionPermissions();
+            await fetchActivePolls(); // NEW: Fetch polls on load
+            console.log('Admin Panel: Admin panel initialized.');
+        }
+        initAdminPanel();
+    </script>
+</body>
+
+</html>

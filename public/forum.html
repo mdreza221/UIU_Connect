@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forum - UIU Connect</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* ... (existing styles) ... */
+
+        /* Table Styles for Topics List */
+        .topic-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .topic-table th,
+        .topic-table td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: left;
+            color: var(--text-color-primary);
+        }
+
+        .topic-table th {
+            background-color: var(--header-bg-color);
+            font-weight: bold;
+        }
+
+        .topic-table td {
+            background-color: var(--primary-bg-color);
+            vertical-align: top;
+        }
+
+        .topic-table .topic-title-cell {
+            min-width: 250px;
+        }
+
+        .topic-table .topic-stats-cell {
+            text-align: center;
+            width: 80px;
+        }
+
+        .topic-table .topic-meta-cell {
+            font-size: 0.85em;
+            color: var(--text-color-secondary);
+            white-space: nowrap;
+        }
+
+        .topic-table .author {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .topic-table .sticky-badge,
+        .topic-table .locked-badge {
+            background-color: var(--accent-color);
+            color: var(--text-color-primary);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7em;
+            margin-left: 5px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .topic-table .locked-badge {
+            background-color: #f44336;
+        }
+
+        .topic-table .admin-topic-actions {
+            display: flex;
+            gap: 5px;
+            justify-content: flex-end;
+            margin-top: 5px;
+        }
+
+        .topic-table .admin-topic-actions button {
+            padding: 4px 8px;
+            font-size: 0.75em;
+        }
+
+        /* Adjust media queries for table layout if necessary */
+        @media (max-width: 768px) {
+
+            .topic-table th,
+            .topic-table td {
+                padding: 8px;
+            }
+
+            .topic-table .topic-title-cell {
+                min-width: unset;
+            }
+
+            .topic-table .topic-stats-cell {
+                width: 60px;
+            }
+
+            .topic-table .topic-meta-cell {
+                font-size: 0.8em;
+            }
+        }
+
+        @media (max-width: 480px) {
+
+            .topic-table,
+            .topic-table thead,
+            .topic-table tbody,
+            .topic-table th,
+            .topic-table td,
+            .topic-table tr {
+                display: block;
+            }
+
+            .topic-table thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+
+            .topic-table tr {
+                margin-bottom: 15px;
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+            }
+
+            .topic-table td {
+                border: none;
+                border-bottom: 1px solid var(--border-color);
+                position: relative;
+                padding-left: 50%;
+                text-align: right;
+                font-size: 0.9em;
+            }
+
+            .topic-table td:before {
+                position: absolute;
+                top: 6px;
+                left: 6px;
+                width: 45%;
+                padding-right: 10px;
+                white-space: nowrap;
+                text-align: left;
+                font-weight: bold;
+                color: var(--text-color-secondary);
+            }
+
+            /* Label the data */
+            .topic-table td:nth-of-type(1):before {
+                content: "Topic:";
+            }
+
+            .topic-table td:nth-of-type(2):before {
+                content: "Author:";
+            }
+
+            .topic-table td:nth-of-type(3):before {
+                content: "Replies:";
+            }
+
+            .topic-table td:nth-of-type(4):before {
+                content: "Views:";
+            }
+
+            .topic-table td:nth-of-type(5):before {
+                content: "Votes:";
+            }
+
+            .topic-table td:nth-of-type(6):before {
+                content: "Last Post:";
+            }
+
+            .topic-table td:nth-of-type(7):before {
+                content: "Actions:";
+            }
+
+            .topic-table .admin-topic-actions {
+                justify-content: flex-start;
+                margin-top: 10px;
+                padding-top: 10px;
+                border-top: 1px solid var(--border-color);
+            }
+
+            .topic-table .topic-title-cell {
+                text-align: right;
+                /* Align title right for mobile label */
+            }
+
+            .topic-table .topic-title-cell a {
+                display: block;
+                /* Ensure the link takes full space */
+            }
+
+            .topic-table td:last-child {
+                border-bottom: 0;
+                /* Remove border from last cell */
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1 id="mainForumHeader">UIU Connect Forum</h1>
+        <a href="/logout" class="action-link-danger">Logout</a>
+    </div>
+
+
+    <nav class="navbar">
+        <ul>
+            <li><a href="/profile">Home</a></li>
+            <li><a href="/forum">Forum</a></li>
+            <li><a href="/events">Events</a></li>
+            <li><a href="/career">Career Corner</a></li>
+            <li><a href="/alumni">Alumni Network</a></li>
+            <li><a href="/announcements">Announcements</a></li>
+            <li><a href="/inbox">Inbox</a></li>
+            <li><a href="/irc">IRC Chat</a></li>
+            <li><a href="/settings">Settings</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/top-contributors">Top Contributors</a></li>
+            <li id="adminLink" style="display:none;"><a href="/admin">Admin Panel</a></li>
+            <li><a href="/filesharing" id="fileSharingLink">File Sharing</a></li>
+            <li><a href="/activities">My Activities</a></li>
+            <li><a href="/faculty-panel">Faculty Panel</a></li>
+            <li><a href="/support">Support</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <div class="search-bar-container">
+            <input type="text" id="searchInput" placeholder="Search topics and posts...">
+            <button id="searchButton">Search</button>
+        </div>
+        <div id="searchError" class="error" style="display:none;"></div>
+        <div id="searchResults" style="display:none;">
+            <h2>Search Results for "<span id="searchQueryDisplay"></span>"</h2>
+            <button id="backToForumBtn" class="back-button">Back to Forum Sections</button>
+            <div id="searchTopicsResults" class="search-results-section">
+                <h3>Topics Found (<span id="topicsCount">0</span>)</h3>
+                <div id="topicsResultsList">
+                    <p>No topics found.</p>
+                </div>
+            </div>
+            <div id="searchPostsResults" class="search-results-section">
+                <h3>Posts Found (<span id="postsCount">0</span>)</h3>
+                <div id="postsResultsList">
+                    <p>No posts found.</p>
+                </div>
+            </div>
+        </div>
+        <div id="forumSectionsListView">
+            <div class="forum-header">
+                <span>Forum Section</span>
+                <span>Topics</span>
+                <span>Posts</span>
+                <span>Last Activity</span>
+            </div>
+
+            <div id="forumSectionsContainer">
+                <p>Loading forum sections...</p>
+            </div>
+            <div id="forumSectionsError" class="error" style="display:none;"></div>
+        </div>
+
+        <div id="sectionTopicsView" style="display:none;">
+            <button id="backToSectionsBtn" class="back-button">Back to All Sections</button>
+            <h2 id="dynamicSectionName"></h2>
+            <p id="dynamicSectionDescription"></p>
+
+            <h3>Topics:</h3>
+            <div id="topicListContainer">
+                <p>Loading topics...</p>
+            </div>
+            <div id="topicsError" class="error" style="display:none;"></div>
+
+            <div class="pagination">
+                <button id="prevPageBtn" disabled>Previous</button>
+                <span id="currentPageSpan">Page 1</span>
+                <button id="nextPageBtn">Next</button>
+            </div>
+        </div>
+
+    </main>
+
+    <div class="fab-container">
+        <a href="/forum/new-topic" class="fab">
+            <i class="fas fa-plus"></i>
+        </a>
+    </div>
+
+    <div class="footer">
+        <p>UIU Connect By END</p>
+    </div>
+
+    <script>
+        const forumSectionsListView = document.getElementById('forumSectionsListView');
+        const forumSectionsContainer = document.getElementById('forumSectionsContainer');
+        const forumSectionsErrorDiv = document.getElementById('forumSectionsError');
+        const sectionTopicsView = document.getElementById('sectionTopicsView');
+        const backToSectionsBtn = document.getElementById('backToSectionsBtn');
+
+        const dynamicSectionName = document.getElementById('dynamicSectionName');
+        const dynamicSectionDescription = document.getElementById('dynamicSectionDescription');
+        const topicListContainer = document.getElementById('topicListContainer');
+        const topicsErrorDiv = document.getElementById('topicsError');
+        const currentPageSpan = document.getElementById('currentPageSpan');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const searchErrorDiv = document.getElementById('searchError');
+        const searchResultsDiv = document.getElementById('searchResults');
+        const searchQueryDisplay = document.getElementById('searchQueryDisplay');
+        const searchTopicsResultsList = document.getElementById('topicsResultsList');
+        const searchPostsResultsList = document.getElementById('postsResultsList');
+        const topicsCountSpan = document.getElementById('topicsCount');
+        const postsCountSpan = document.getElementById('postsCount');
+        const backToForumBtn = document.getElementById('backToForumBtn');
+
+        let currentSectionId = null;
+        let currentPage = 1;
+        const topicsPerPage = 10;
+        let allTopics = [];
+        let isAdmin = false;
+
+        async function fetchForumSections() {
+            forumSectionsContainer.innerHTML = '<p>Loading forum sections...</p>';
+            forumSectionsErrorDiv.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/forum/sections');
+                const sections = await res.json();
+
+                if (res.ok) {
+                    forumSectionsContainer.innerHTML = '';
+                    if (sections.length === 0) {
+                        forumSectionsContainer.innerHTML = '<p>No forum sections available yet.</p>';
+                    } else {
+                        sections.forEach(section => {
+                            const sectionDiv = document.createElement('section');
+                            sectionDiv.classList.add('forum-section');
+                            sectionDiv.innerHTML = `
+                                <div class="section-details">
+                                    <h3><a href="#" class="section-click-handler"
+                                        data-section-id="${section.id}"
+                                        data-section-name="${section.name}"
+                                        data-section-description="${section.description}"
+                                        style="color: var(--text-color-primary); text-decoration: none;">${section.name}</a></h3>
+                                    <p>${section.description}</p>
+                                </div>
+                                <div class="section-stats">
+                                    <span>${section.topic_count}</span>
+                                    <span>${section.post_count}</span>
+                                    <span>${formatLastActivity(section.last_activity_at)}</span>
+                                </div>
+                            `;
+                            forumSectionsContainer.appendChild(sectionDiv);
+                        });
+
+                        document.querySelectorAll('.section-click-handler').forEach(link => {
+                            link.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                const sectionId = e.target.dataset.sectionId;
+                                const sectionName = e.target.dataset.sectionName;
+                                const sectionDescription = e.target.dataset.sectionDescription;
+                                loadSectionTopics(sectionId, sectionName, sectionDescription);
+                            });
+                        });
+                    }
+                } else {
+                    forumSectionsErrorDiv.textContent = sections.error || 'Failed to load forum sections.';
+                    forumSectionsErrorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error fetching forum sections:', error);
+                forumSectionsErrorDiv.textContent = 'Network error or server unavailable.';
+                forumSectionsErrorDiv.style.display = 'block';
+            }
+        }
+
+        function formatLastActivity(timestamp) {
+            if (!timestamp) return 'Never';
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffSec = Math.round(diffMs / 1000);
+            const diffMin = Math.round(diffSec / 60);
+            const diffHr = Math.round(diffMin / 60);
+            const diffDay = Math.round(diffHr / 24);
+
+            if (diffSec < 60) return `${diffSec}s ago`;
+            if (diffMin < 60) return `${diffMin}m ago`;
+            if (diffHr < 24) return `${diffHr}h ago`;
+            if (diffDay < 30) return `${diffDay}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        // NEW: Back to Forum Sections (for search results)
+        backToForumBtn.addEventListener('click', () => {
+            searchResultsDiv.style.display = 'none';
+            forumSectionsListView.style.display = 'block';
+            document.getElementById('mainForumHeader').textContent = 'UIU Connect Forum';
+            searchInput.value = '';
+        });
+
+        backToSectionsBtn.addEventListener('click', () => {
+            forumSectionsListView.style.display = 'block';
+            sectionTopicsView.style.display = 'none';
+            searchResultsDiv.style.display = 'none';
+            currentSectionId = null;
+            window.history.pushState(null, '', '/forum');
+            document.getElementById('mainForumHeader').textContent = 'UIU Connect Forum';
+            fetchForumSections();
+        });
+
+        async function loadSectionTopics(sectionId, name, description) {
+            currentSectionId = sectionId;
+            currentPage = 1;
+
+            dynamicSectionName.textContent = name;
+            dynamicSectionDescription.textContent = description;
+            document.getElementById('mainForumHeader').textContent = name;
+
+            forumSectionsListView.style.display = 'none';
+            sectionTopicsView.style.display = 'block';
+            searchResultsDiv.style.display = 'none';
+
+            window.history.pushState({ sectionId: sectionId, sectionName: name, sectionDescription: description }, '', `/forum/sections/${sectionId}`);
+
+            await fetchTopicsForSection();
+        }
+
+        async function fetchTopicsForSection() {
+            // MODIFIED: Change text for new container
+            topicListContainer.innerHTML = '<p>Loading topics...</p>';
+            topicsErrorDiv.style.display = 'none';
+
+            try {
+                const res = await fetch(`/api/forum/sections/${currentSectionId}/topics`);
+                const topicsData = await res.json();
+
+                if (res.ok) {
+                    allTopics = topicsData;
+                    renderTopicsForPage(currentPage);
+                } else {
+                    topicsErrorDiv.textContent = topicsData.error || 'Failed to load topics.';
+                    topicsErrorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error fetching topics:', error);
+                topicsErrorDiv.textContent = 'Network error or server unavailable.';
+                topicsErrorDiv.style.display = 'block';
+            }
+        }
+
+        function renderTopicsForPage(page) {
+            // MODIFIED: Create a table instead of a ul
+            topicListContainer.innerHTML = '';
+
+            const startIndex = (page - 1) * topicsPerPage;
+            const endIndex = startIndex + topicsPerPage;
+            const paginatedTopics = allTopics.slice(startIndex, endIndex);
+
+            if (paginatedTopics.length === 0) {
+                topicListContainer.innerHTML = '<p>No topics in this section yet. Be the first to post!</p>';
+            } else {
+                const table = document.createElement('table');
+                table.classList.add('topic-table');
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Topic</th>
+                            <th>Author</th>
+                            <th class="topic-stats-cell">Replies</th>
+                            <th class="topic-stats-cell">Views</th>
+                            <th class="topic-stats-cell">Votes</th>
+                            <th>Last Post</th>
+                            ${isAdmin ? '<th>Actions</th>' : ''}
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                `;
+                const tbody = table.querySelector('tbody');
+
+                paginatedTopics.forEach(topic => {
+                    const row = tbody.insertRow();
+
+                    // Topic Title Cell
+                    const titleCell = row.insertCell();
+                    titleCell.classList.add('topic-title-cell');
+                    titleCell.innerHTML = `
+                        <a href="/forum/topics/${topic.id}">${topic.title}</a>
+                        ${topic.is_sticky ? '<span class="sticky-badge">Sticky</span>' : ''}
+                        ${topic.is_locked ? '<span class="locked-badge">Locked</span>' : ''}
+                    `;
+
+                    // Author Cell
+                    const authorCell = row.insertCell();
+                    authorCell.classList.add('topic-meta-cell');
+                    // UPDATED CODE BLOCK
+                    authorCell.innerHTML = `
+                        <span class="author ${topic.author_display_role ? `role-${topic.author_display_role}` : ''}">${topic.username}</span>
+                        <br>
+                        <span style="font-size: 0.9em; color: var(--text-color-secondary);">(${topic.author_display_role || 'User'})</span>
+                    `;
+                    // END UPDATED CODE BLOCK
+
+                    // Replies Cell
+                    const repliesCell = row.insertCell();
+                    repliesCell.classList.add('topic-stats-cell');
+                    repliesCell.textContent = topic.reply_count;
+
+                    // Views Cell
+                    const viewsCell = row.insertCell();
+                    viewsCell.classList.add('topic-stats-cell');
+                    viewsCell.textContent = topic.views;
+
+                    // Votes Cell
+                    const votesCell = row.insertCell();
+                    votesCell.classList.add('topic-stats-cell');
+                    votesCell.textContent = topic.upvotes - topic.downvotes;
+
+                    // Last Post Cell
+                    const lastPostCell = row.insertCell();
+                    lastPostCell.classList.add('topic-meta-cell');
+                    lastPostCell.textContent = formatRelativeTime(topic.last_post_at);
+
+                    // Admin Actions Cell (conditional)
+                    if (isAdmin) {
+                        const actionsCell = row.insertCell();
+                        actionsCell.innerHTML = `
+                            <div class="admin-topic-actions">
+                                <button class="lock-button ${topic.is_locked ? 'locked' : ''}"
+                                        onclick="toggleTopicLock(${topic.id}, ${topic.is_locked})">
+                                    <i class="fas ${topic.is_locked ? 'fa-lock' : 'fa-lock-open'}"></i>
+                                    ${topic.is_locked ? 'Unlock' : 'Lock'}
+                                </button>
+                                <button class="delete-button" onclick="deleteTopic(${topic.id})">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        `;
+                    }
+                });
+                topicListContainer.appendChild(table);
+            }
+
+            const totalPages = Math.ceil(allTopics.length / topicsPerPage);
+            currentPageSpan.textContent = `Page ${page} of ${totalPages}`;
+            prevPageBtn.disabled = page === 1;
+            nextPageBtn.disabled = page >= totalPages;
+        }
+
+        function formatRelativeTime(timestamp) {
+            if (!timestamp) return 'Never';
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffSec = Math.round(diffMs / 1000);
+            const diffMin = Math.round(diffSec / 60);
+            const diffHr = Math.round(diffMin / 60);
+            const diffDay = Math.round(diffHr / 24);
+
+            if (diffSec < 60) return `${diffSec}s ago`;
+            if (diffMin < 60) return `${diffMin}m ago`;
+            if (diffHr < 24) return `${diffHr}h ago`;
+            if (diffDay < 30) return `${diffDay}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTopicsForPage(currentPage);
+            }
+        });
+
+        nextPageBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(allTopics.length / topicsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTopicsForPage(currentPage);
+            }
+        });
+
+        window.addEventListener('popstate', (event) => {
+            if (event.state && event.state.sectionId) {
+                loadSectionTopics(event.state.sectionId, event.state.sectionName, event.state.sectionDescription);
+            } else if (event.state && event.state.searchQuery) {
+                performSearch(event.state.searchQuery);
+            } else {
+                forumSectionsListView.style.display = 'block';
+                sectionTopicsView.style.display = 'none';
+                searchResultsDiv.style.display = 'none';
+                document.getElementById('mainForumHeader').textContent = 'UIU Connect Forum';
+                currentSectionId = null;
+                fetchForumSections();
+            }
+        });
+
+        async function toggleTopicLock(topicId, isLocked) {
+            const action = isLocked ? 'unlock' : 'lock';
+            if (!confirm(`Are you sure you want to ${action} this topic?`)) {
+                return;
+            }
+            try {
+                const res = await fetch(`/api/forum/topics/${topicId}/lock`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_locked: !isLocked })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(data.message || `Topic ${action}ed successfully!`);
+                    fetchTopicsForSection();
+                } else {
+                    alert('Error: ' + (data.error || `Failed to ${action} topic.`));
+                }
+            } catch (error) {
+                console.error(`Error toggling topic lock status:`, error);
+                alert('Network error or server unavailable.');
+            }
+        }
+
+        async function deleteTopic(topicId) {
+            if (!confirm('Are you sure you want to delete this topic and all its posts? This action cannot be undone.')) {
+                return;
+            }
+            try {
+                const res = await fetch(`/api/forum/topics/${topicId}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(data.message || 'Topic deleted successfully!');
+                    fetchTopicsForSection();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to delete topic.'));
+                }
+            } catch (error) {
+                console.error('Error deleting topic:', error);
+                alert('Network error or server unavailable.');
+            }
+        }
+
+        async function checkAdminStatus() {
+            try {
+                const res = await fetch('/user-data');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.user.roles && data.user.roles.includes('Admin')) {
+                        document.getElementById('adminLink').style.display = 'inline';
+                        isAdmin = true;
+                    } else {
+                        isAdmin = false;
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking admin status:', error);
+                isAdmin = false;
+            }
+        }
+
+        // NEW: Search Logic
+        searchButton.addEventListener('click', () => {
+            const query = searchInput.value.trim();
+            if (query) {
+                performSearch(query);
+            } else {
+                searchErrorDiv.textContent = 'Please enter a search query.';
+                searchErrorDiv.style.display = 'block';
+            }
+        });
+
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchButton.click();
+            }
+        });
+
+        async function performSearch(query) {
+            searchErrorDiv.style.display = 'none';
+            searchTopicsResultsList.innerHTML = '<p>Searching topics...</p>';
+            searchPostsResultsList.innerHTML = '<p>Searching posts...</p>';
+            topicsCountSpan.textContent = '0';
+            postsCountSpan.textContent = '0';
+            searchQueryDisplay.textContent = query;
+
+            // Hide other views
+            forumSectionsListView.style.display = 'none';
+            sectionTopicsView.style.display = 'none';
+            searchResultsDiv.style.display = 'block';
+
+            // Update URL
+            window.history.pushState({ searchQuery: query }, '', `/forum?search=${encodeURIComponent(query)}`);
+
+            try {
+                const res = await fetch(`/api/forum/search?query=${encodeURIComponent(query)}`);
+                const data = await res.json();
+
+                if (res.ok) {
+                    renderSearchResults(data.topics, data.posts);
+                } else {
+                    searchErrorDiv.textContent = data.error || 'Failed to perform search.';
+                    searchErrorDiv.style.display = 'block';
+                    searchTopicsResultsList.innerHTML = `<p>${data.error || 'No results.'}</p>`;
+                    searchPostsResultsList.innerHTML = ``;
+                }
+            } catch (error) {
+                console.error('Error during search:', error);
+                searchErrorDiv.textContent = 'Network error or server unavailable during search.';
+                searchErrorDiv.style.display = 'block';
+                searchTopicsResultsList.innerHTML = `<p>Network error.</p>`;
+                searchPostsResultsList.innerHTML = ``;
+            }
+        }
+
+        function renderSearchResults(topics, posts) {
+            searchTopicsResultsList.innerHTML = '';
+            searchPostsResultsList.innerHTML = '';
+
+            topicsCountSpan.textContent = topics.length;
+            postsCountSpan.textContent = posts.length;
+
+            if (topics.length === 0) {
+                searchTopicsResultsList.innerHTML = '<p>No topics found matching your query.</p>';
+            } else {
+                topics.forEach(topic => {
+                    const item = document.createElement('div');
+                    item.classList.add('search-result-item');
+                    item.innerHTML = `
+                        <a href="/forum/topics/${topic.id}">${topic.title}</a>
+                        <div class="search-result-meta">
+                            <span>In: ${topic.section_name}</span>
+                            <span>By: ${topic.username}</span>
+                            <span>Posts: ${topic.reply_count}</span>
+                            <span>Views: ${topic.views}</span>
+                            <span>Last activity: ${formatRelativeTime(topic.last_post_at)}</span>
+                        </div>
+                        <p class="search-result-content">${topic.content.substring(0, 200)}...</p>
+                    `;
+                    searchTopicsResultsList.appendChild(item);
+                });
+            }
+
+            if (posts.length === 0) {
+                searchPostsResultsList.innerHTML = '<p>No posts found matching your query.</p>';
+            } else {
+                posts.forEach(post => {
+                    const item = document.createElement('div');
+                    item.classList.add('search-result-item');
+                    item.innerHTML = `
+                        <a href="/forum/topics/${post.topic_id}">Re: ${post.topic_title}</a>
+                        <div class="search-result-meta">
+                            <span>In: ${post.section_id ? `Section ID: ${post.section_id}` : 'N/A'} (Topic ID: ${post.topic_id})</span>
+                            <span>By: ${post.username}</span>
+                            <span>Posted: ${formatRelativeTime(post.created_at)}</span>
+                        </div>
+                        <p class="search-result-content">${post.content.substring(0, 200)}...</p>
+                    `;
+                    searchPostsResultsList.appendChild(item);
+                });
+            }
+        }
+
+        // Initial load based on URL query parameter
+        checkAdminStatus().then(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchQuery = urlParams.get('search');
+            if (searchQuery) {
+                searchInput.value = searchQuery;
+                performSearch(searchQuery);
+            } else {
+                fetchForumSections();
+            }
+        });
+    </script>
+</body>
+
+</html>

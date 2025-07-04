@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">Forum Section - UIU Connect</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .topic-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .topic-item {
+            background-color: var(--primary-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .topic-item h3 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+
+        .topic-item h3 a {
+            color: var(--text-color-primary);
+            text-decoration: none;
+        }
+
+        .topic-item h3 a:hover {
+            color: var(--accent-color);
+            text-decoration: underline;
+        }
+
+        .topic-meta {
+            font-size: 0.85em;
+            color: var(--text-color-secondary);
+        }
+
+        .topic-meta span {
+            margin-right: 15px;
+        }
+
+        .topic-meta .author {
+            color: var(--accent-color);
+        }
+
+        .topic-meta .sticky-badge,
+        .topic-meta .locked-badge {
+            background-color: var(--accent-color);
+            color: var(--text-color-primary);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7em;
+            margin-left: 5px;
+            font-weight: bold;
+        }
+
+        .topic-meta .locked-badge {
+            background-color: #f44336;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+
+        .pagination button {
+            background-color: var(--button-bg-color);
+            color: var(--text-color-primary);
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .pagination button:disabled {
+            background-color: var(--border-color);
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1 id="sectionNameHeader">Forum Section</h1>
+        <div style="display: flex; align-items: center;">
+            <div class="notification-icon-container">
+                <i class="fas fa-bell" id="notificationBell"></i>
+                <span class="notification-badge" id="notificationBadge"></span>
+                <div class="notifications-dropdown" id="notificationsDropdown">
+                    <h3>Notifications</h3>
+                    <div id="notificationsList">
+                        <p class="no-notifications">No new notifications.</p>
+                    </div>
+                    <button class="mark-all-read-btn" id="markAllReadBtn" style="display:none;">Mark All As
+                        Read</button>
+                </div>
+            </div>
+            <a href="/logout" class="action-link-danger">Logout</a>
+        </div>
+    </div>
+
+
+    <nav class="navbar">
+        <ul>
+            <li><a href="/profile">Home</a></li>
+            <li><a href="/forum">Forum</a></li>
+            <li><a href="/events">Events</a></li>
+            <li><a href="/career">Career Corner</a></li>
+            <li><a href="/alumni">Alumni Network</a></li>
+            <li><a href="/announcements">Announcements</a></li>
+            <li><a href="/inbox">Inbox</a></li>
+            <li><a href="/irc">IRC Chat</a></li>
+            <li><a href="/settings">Settings</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/top-contributors">Top Contributors</a></li>
+            <li id="adminLink" style="display:none;"><a href="/admin">Admin Panel</a></li>
+            <li><a href="/filesharing" id="fileSharingLink">File Sharing</a></li>
+            <li><a href="/activities">My Activities</a></li>
+            <li><a href="/faculty-panel">Faculty Panel</a></li>
+            <li><a href="/support">Support</a></li>
+        </ul>
+    </nav>
+
+
+    <div class="container">
+        <h2 id="sectionName">Loading Section...</h2>
+
+        <h3>Topics:</h3>
+        <ul id="topicList" class="topic-list">
+            <li>
+                <p>Loading topics...</p>
+            </li>
+        </ul>
+        <div id="topicsError" class="error" style="display:none;"></div>
+
+        <div class="pagination">
+            <button id="prevPageBtn" disabled>Previous</button>
+            <span id="currentPageSpan">Page 1</span>
+            <button id="nextPageBtn">Next</button>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>UIU Connect By END</p>
+    </div>
+
+    <script>
+        const sectionId = window.location.pathname.split('/').pop();
+        const sectionNameHeader = document.getElementById('sectionNameHeader');
+        const sectionName = document.getElementById('sectionName');
+        const topicList = document.getElementById('topicList');
+        const topicsErrorDiv = document.getElementById('topicsError');
+
+        let currentPage = 1;
+        const topicsPerPage = 10;
+        let allTopics = [];
+
+        async function fetchSectionDetails() {
+            try {
+                const res = await fetch(`/api/forum/sections`);
+                const sections = await res.json();
+                if (res.ok) {
+                    const currentSection = sections.find(s => s.id == sectionId);
+                    if (currentSection) {
+                        sectionNameHeader.textContent = currentSection.name;
+                        document.getElementById('pageTitle').textContent = `${currentSection.name} - UIU Connect`;
+                        sectionName.textContent = currentSection.name;
+                    } else {
+                        sectionNameHeader.textContent = 'Section Not Found';
+                        sectionName.textContent = 'Section Not Found';
+                        topicsErrorDiv.textContent = 'The requested forum section does not exist.';
+                        topicsErrorDiv.style.display = 'block';
+                    }
+                } else {
+                    topicsErrorDiv.textContent = 'Failed to load section details.';
+                    topicsErrorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error fetching section details:', error);
+                topicsErrorDiv.textContent = 'Network error loading section details.';
+                topicsErrorDiv.style.display = 'block';
+            }
+        }
+
+        async function fetchTopics() {
+            topicList.innerHTML = '<li><p>Loading topics...</p></li>';
+            topicsErrorDiv.style.display = 'none';
+
+            try {
+                const res = await fetch(`/api/forum/sections/${sectionId}/topics`);
+                const topicsData = await res.json();
+
+                if (res.ok) {
+                    allTopics = topicsData;
+                    renderTopicsForPage(currentPage);
+                } else {
+                    topicsErrorDiv.textContent = topicsData.error || 'Failed to load topics.';
+                    topicsErrorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error fetching topics:', error);
+                topicsErrorDiv.textContent = 'Network error or server unavailable.';
+                topicsErrorDiv.style.display = 'block';
+            }
+        }
+
+        function renderTopicsForPage(page) {
+            topicList.innerHTML = '';
+            const startIndex = (page - 1) * topicsPerPage;
+            const endIndex = startIndex + topicsPerPage;
+            const paginatedTopics = allTopics.slice(startIndex, endIndex);
+
+            if (paginatedTopics.length === 0) {
+                topicList.innerHTML = '<li><p>No topics in this section yet. Be the first to post!</p></li>';
+            } else {
+                paginatedTopics.forEach(topic => {
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('topic-item');
+                    listItem.innerHTML = `
+                        <h3>
+                            <a href="/forum/topics/${topic.id}">${topic.title}</a>
+                            ${topic.is_sticky ? '<span class="sticky-badge">Sticky</span>' : ''}
+                            ${topic.is_locked ? '<span class="locked-badge">Locked</span>' : ''}
+                        </h3>
+                        <div class="topic-meta">
+                            <span>By <span class="author">${topic.username}</span> (${topic.reputation_points} rep)</span>
+                            <span>Replies: ${topic.reply_count}</span>
+                            <span>Views: ${topic.views}</span>
+                            <span>Last Post: ${formatRelativeTime(topic.last_post_at)}</span>
+                            <span>Votes: ${topic.upvotes - topic.downvotes}</span>
+                        </div>
+                    `;
+                    topicList.appendChild(listItem);
+                });
+            }
+
+            const totalPages = Math.ceil(allTopics.length / topicsPerPage);
+            document.getElementById('currentPageSpan').textContent = `Page ${page} of ${totalPages}`;
+            document.getElementById('prevPageBtn').disabled = page === 1;
+            document.getElementById('nextPageBtn').disabled = page >= totalPages;
+        }
+
+        function formatRelativeTime(timestamp) {
+            if (!timestamp) return 'Never';
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffSec = Math.round(diffMs / 1000);
+            const diffMin = Math.round(diffSec / 60);
+            const diffHr = Math.round(diffMin / 60);
+            const diffDay = Math.round(diffHr / 24);
+
+            if (diffSec < 60) return `${diffSec}s ago`;
+            if (diffMin < 60) return `${diffMin}m ago`;
+            if (diffHr < 24) return `${diffHr}h ago`;
+            if (diffDay < 30) return `${diffDay}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        document.getElementById('prevPageBtn').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTopicsForPage(currentPage);
+            }
+        });
+
+        document.getElementById('nextPageBtn').addEventListener('click', () => {
+            const totalPages = Math.ceil(allTopics.length / topicsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTopicsForPage(currentPage);
+            }
+        });
+
+        fetchSectionDetails();
+        fetchTopics();
+
+        async function checkAdminStatus() {
+            try {
+                const res = await fetch('/user-data');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.user.roles && data.user.roles.includes('Admin')) {
+                        document.getElementById('adminLink').style.display = 'inline';
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking admin status:', error);
+            }
+        }
+        checkAdminStatus();
+    </script>
+    <script src="/notifications.js"></script>
+</body>
+
+</html>

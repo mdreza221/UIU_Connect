@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UIU Connect - Login / Signup</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        #signupContainer {
+            display: none;
+        }
+
+        .form-toggle-link {
+            text-align: center;
+            margin-top: 15px;
+            margin-bottom: 20px;
+            color: var(--text-color-secondary);
+        }
+
+        .form-toggle-link a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .form-toggle-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>UIU Connect</h1>
+    </div>
+
+    <div class="container">
+        <div id="loginContainer">
+            <h2>Login to Your Account</h2>
+            <form id="loginForm">
+                <label for="loginUsername">Username:</label>
+                <input type="text" id="loginUsername" name="username" required>
+                <label for="loginPassword">Password:</label>
+                <input type="password" id="loginPassword" name="password" required>
+                <button type="submit">Login</button>
+                <div id="loginMessage" class="message" style="display:none;"></div>
+                <div id="loginError" class="error" style="display:none;"></div>
+            </form>
+            <p class="form-toggle-link">Don't have an account? <a href="#" id="showSignupLink">Sign up here!</a></p>
+        </div>
+
+        <div id="signupContainer">
+            <h2>Create a New Account</h2>
+            <form id="signupForm">
+                <label for="signupName">Name:</label>
+                <input type="text" id="signupName" name="name" required>
+                <label for="signupEmail">Email:</label>
+                <input type="email" id="signupEmail" name="email" required>
+                <label for="signupUsername">Username:</label>
+                <input type="text" id="signupUsername" name="username" required>
+                <label for="signupPassword">Password:</label>
+                <input type="password" id="signupPassword" name="password" required>
+                <button type="submit">Signup</button>
+                <div id="signupMessage" class="message" style="display:none;"></div>
+                <div id="signupError" class="error" style="display:none;"></div>
+            </form>
+            <p class="form-toggle-link">Already have an account? <a href="#" id="showLoginLink">Login here!</a></p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>UIU Connect By END</p>
+    </div>
+
+    <script>
+        const loginContainer = document.getElementById('loginContainer');
+        const signupContainer = document.getElementById('signupContainer');
+        const showSignupLink = document.getElementById('showSignupLink');
+        const showLoginLink = document.getElementById('showLoginLink');
+
+        function showLoginForm() {
+            loginContainer.style.display = 'block';
+            signupContainer.style.display = 'none';
+        }
+
+        function showSignupForm() {
+            loginContainer.style.display = 'none';
+            signupContainer.style.display = 'block';
+        }
+
+        showLoginForm();
+
+        showSignupLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSignupForm();
+        });
+
+        showLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showLoginForm();
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const loginMessage = document.getElementById('loginMessage');
+            const loginError = document.getElementById('loginError');
+
+            loginMessage.style.display = 'none';
+            loginError.style.display = 'none';
+
+            try {
+                const res = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    loginMessage.textContent = data.message;
+                    loginMessage.style.display = 'block';
+                    window.location.href = '/profile';
+                } else {
+                    loginError.textContent = data.error;
+                    loginError.style.display = 'block';
+                }
+            } catch (err) {
+                loginError.textContent = 'Network error or server unavailable.';
+                loginError.style.display = 'block';
+            }
+        });
+
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const username = document.getElementById('signupUsername').value;
+            const password = document.getElementById('signupPassword').value;
+            const signupMessage = document.getElementById('signupMessage');
+            const signupError = document.getElementById('signupError');
+
+            signupMessage.style.display = 'none';
+            signupError.style.display = 'none';
+
+            try {
+                const res = await fetch('/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, username, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    signupMessage.textContent = data.message;
+                    signupMessage.style.display = 'block';
+                    document.getElementById('signupForm').reset();
+                    showLoginForm();
+                    loginMessage.textContent = 'Signup successful! Please log in.';
+                    loginMessage.style.display = 'block';
+                } else {
+                    signupError.textContent = data.error;
+                    signupError.style.display = 'block';
+                }
+            } catch (err) {
+                signupError.textContent = 'Network error or server unavailable.';
+                signupError.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+
+</html>

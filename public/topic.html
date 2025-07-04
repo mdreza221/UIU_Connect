@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">Topic - UIU Connect</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .topic-post,
+        .reply-post {
+            background-color: var(--primary-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .post-author-info {
+            flex: 0 0 150px;
+            text-align: center;
+            border-right: 1px solid var(--border-color);
+            padding-right: 15px;
+        }
+
+        .post-author-info .username {
+            font-weight: bold;
+            /* Base color, will be overridden by role classes */
+            color: var(--text-color-primary);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .post-author-info .reputation {
+            font-size: 0.8em;
+            color: var(--text-color-secondary);
+        }
+
+        .post-content-area {
+            flex-grow: 1;
+            padding-left: 15px;
+        }
+
+        .post-content-area .content {
+            margin-top: 0;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .post-footer {
+            font-size: 0.8em;
+            color: var(--text-color-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+
+        .post-footer .actions button {
+            background: none;
+            border: none;
+            color: var(--text-color-secondary);
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-left: 10px;
+            transition: color 0.2s ease;
+        }
+
+        .post-footer .actions button:hover {
+            color: var(--accent-color);
+        }
+
+        .post-footer .actions button.upvote:hover {
+            color: #4CAF50;
+        }
+
+        .post-footer .actions button.downvote:hover {
+            color: #f44336;
+        }
+
+        .post-footer .actions span {
+            margin-left: 5px;
+            font-weight: bold;
+        }
+
+        .post-footer .post-timestamp {
+            font-size: 0.9em;
+        }
+
+        .reply-form-container {
+            margin-top: 30px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+
+        .reply-form-container h2 {
+            margin-top: 0;
+            color: var(--accent-color);
+        }
+
+        .locked-message {
+            background-color: #f44336;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        /* Styles for edit form */
+        .edit-form {
+            background-color: var(--secondary-bg-color);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+            /* Hidden by default */
+        }
+
+        .edit-form textarea {
+            width: calc(100% - 20px);
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--primary-bg-color);
+            color: var(--text-color-primary);
+        }
+
+        .edit-form button {
+            padding: 6px 12px;
+            margin-right: 5px;
+        }
+
+        .edit-form .cancel-button {
+            background-color: #f44336;
+        }
+
+        .edit-form .cancel-button:hover {
+            background-color: #d32f2f;
+        }
+
+        /* New style for back button */
+        .back-button {
+            background-color: var(--button-bg-color);
+            color: var(--text-color-primary);
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            /* Space below the button */
+            display: inline-block;
+            /* To allow margin-bottom */
+            transition: background-color 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: var(--button-hover-color);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1 id="topicTitleHeader">Topic</h1>
+        <div style="display: flex; align-items: center;">
+            <div class="notification-icon-container">
+                <i class="fas fa-bell" id="notificationBell"></i>
+                <span class="notification-badge" id="notificationBadge"></span>
+                <div class="notifications-dropdown" id="notificationsDropdown">
+                    <h3>Notifications</h3>
+                    <div id="notificationsList">
+                        <p class="no-notifications">No new notifications.</p>
+                    </div>
+                    <button class="mark-all-read-btn" id="markAllReadBtn" style="display:none;">Mark All As
+                        Read</button>
+                </div>
+            </div>
+            <a href="/logout" class="action-link-danger">Logout</a>
+        </div>
+    </div>
+
+
+    <nav class="navbar">
+        <ul>
+            <li><a href="/profile">Home</a></li>
+            <li><a href="/forum">Forum</a></li>
+            <li><a href="/events">Events</a></li>
+            <li><a href="/career">Career Corner</a></li>
+            <li><a href="/alumni">Alumni Network</a></li>
+            <li><a href="/announcements">Announcements</a></li>
+            <li><a href="/inbox">Inbox</a></li>
+            <li><a href="/irc">IRC Chat</a></li>
+            <li><a href="/settings">Settings</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/top-contributors">Top Contributors</a></li>
+            <li id="adminLink" style="display:none;"><a href="/admin">Admin Panel</a></li>
+            <li><a href="/filesharing" id="fileSharingLink">File Sharing</a></li>
+            <li><a href="/activities">My Activities</a></li>
+            <li><a href="/faculty-panel">Faculty Panel</a></li>
+            <li><a href="/support">Support</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <button id="backToAllSectionsBtn" class="back-button">Back to All Sections</button>
+
+        <h2 id="topicMainTitle">Loading Topic...</h2>
+        <div id="topicDetails">
+        </div>
+        <div id="topicError" class="error" style="display:none;"></div>
+
+        <div id="lockedMessage" class="locked-message" style="display:none;">
+            This topic is locked and cannot receive new replies.
+        </div>
+
+        <h3>Replies:</h3>
+        <ul id="repliesList">
+            <li>
+                <p>Loading replies...</p>
+            </li>
+        </ul>
+        <div id="repliesError" class="error" style="display:none;"></div>
+
+        <div id="replyFormContainer" class="reply-form-container">
+            <h2>Post a Reply</h2>
+            <form id="newReplyForm">
+                <label for="replyContent">Your Reply:</label>
+                <textarea id="replyContent" rows="8" required></textarea>
+                <button type="submit">Submit Reply</button>
+                <div id="newReplyMessage" class="message" style="display:none;"></div>
+                <div id="newReplyError" class="error" style="display:none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>UIU Connect By END</p>
+    </div>
+
+    <script>
+        const topicId = window.location.pathname.split('/').pop();
+        const topicTitleHeader = document.getElementById('topicTitleHeader');
+        const topicMainTitle = document.getElementById('topicMainTitle');
+        const topicDetailsDiv = document.getElementById('topicDetails');
+        const repliesList = document.getElementById('repliesList');
+        const topicErrorDiv = document.getElementById('topicError');
+        const repliesErrorDiv = document.getElementById('repliesError');
+        const newReplyForm = document.getElementById('newReplyForm');
+        const replyContentInput = document.getElementById('replyContent');
+        const newReplyMessageDiv = document.getElementById('newReplyMessage');
+        const newReplyErrorDiv = document.getElementById('newReplyError');
+        const lockedMessageDiv = document.getElementById('lockedMessage');
+        const replyFormContainer = document.getElementById('replyFormContainer');
+        const backToAllSectionsBtn = document.getElementById('backToAllSectionsBtn');
+
+        let isTopicLocked = false;
+        let currentUserId = null;
+        let currentUserRoles = [];
+
+        // Add event listener for the back button
+        backToAllSectionsBtn.addEventListener('click', () => {
+            window.location.href = '/forum';
+        });
+
+        async function fetchUserDataForPermissions() {
+            try {
+                const res = await fetch('/user-data');
+                if (res.ok) {
+                    const data = await res.json();
+                    currentUserId = data.user.id;
+                    currentUserRoles = data.user.roles;
+                    if (currentUserRoles && currentUserRoles.includes('Admin')) {
+                        document.getElementById('adminLink').style.display = 'inline';
+                    }
+                } else {
+                    console.error('Failed to load user data for permissions.');
+                }
+            } catch (error) {
+                console.error('Network error fetching user data for permissions:', error);
+            }
+        }
+
+
+        async function fetchTopicAndPosts() {
+            topicDetailsDiv.innerHTML = '<p>Loading topic details...</p>';
+            repliesList.innerHTML = '<li><p>Loading replies...</p></li>';
+            topicErrorDiv.style.display = 'none';
+            repliesErrorDiv.style.display = 'none';
+            lockedMessageDiv.style.display = 'none';
+            replyFormContainer.style.display = 'block';
+
+            if (currentUserId === null) {
+                await fetchUserDataForPermissions();
+            }
+
+            try {
+                const res = await fetch(`/api/forum/topics/${topicId}`);
+                const data = await res.json();
+
+                if (res.ok) {
+                    const topic = data.topic;
+                    const posts = data.posts;
+
+                    topicTitleHeader.textContent = topic.title;
+                    document.getElementById('pageTitle').textContent = `${topic.title} - UIU Connect`;
+                    topicMainTitle.textContent = topic.title;
+
+                    isTopicLocked = topic.is_locked;
+                    if (isTopicLocked) {
+                        lockedMessageDiv.style.display = 'block';
+                        replyFormContainer.style.display = 'none';
+                    }
+
+                    const originalPost = posts[0];
+                    if (originalPost) {
+                        topicDetailsDiv.innerHTML = createPostHtml(originalPost, 'topic-post', 'topic', topic.id, topic.user_id, topic.author_display_role);
+                    } else {
+                        topicDetailsDiv.innerHTML = `<p>Error: Topic content not found.</p>`;
+                    }
+
+                    repliesList.innerHTML = '';
+                    const replies = posts.slice(1);
+                    if (replies.length === 0) {
+                        repliesList.innerHTML = '<li><p>No replies yet. Be the first to reply!</p></li>';
+                    } else {
+                        replies.forEach(post => {
+                            const listItem = document.createElement('li');
+                            listItem.innerHTML = createPostHtml(post, 'reply-post', 'post', post.id, post.user_id, post.author_display_role);
+                            repliesList.appendChild(listItem);
+                        });
+                    }
+
+                } else {
+                    topicErrorDiv.textContent = data.error || 'Failed to load topic.';
+                    topicErrorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error fetching topic and posts:', error);
+                topicErrorDiv.textContent = 'Network error or server unavailable.';
+                topicErrorDiv.style.display = 'block';
+            }
+        }
+
+        // Updated createPostHtml to accept authorDisplayRole and display it
+        function createPostHtml(post, cssClass, entityType, entityId, authorId, authorDisplayRole) {
+            const upvotes = post.upvotes || 0;
+            const downvotes = post.downvotes || 0;
+            const netVotes = upvotes - downvotes;
+            const timestamp = post.updated_at ? `Edited: ${new Date(post.updated_at).toLocaleString()}` : `Posted: ${new Date(post.created_at).toLocaleString()}`;
+
+            const canEditOrDelete = (currentUserId === authorId || currentUserRoles.includes('Admin'));
+
+            // Construct the class for the username dynamically
+            const usernameClass = `username role-${authorDisplayRole || 'Unknown'}`;
+
+            return `
+                <div class="${cssClass}">
+                    <div class="post-author-info">
+                        <span class="${usernameClass}">${post.username}</span>
+                        <div style="font-size: 0.9em; margin-bottom: 5px;">(${authorDisplayRole || 'User'})</div>
+                        <span class="reputation">${post.reputation_points} rep</span>
+                    </div>
+                    <div class="post-content-area">
+                        <p class="content" id="content-${entityType}-${entityId}">${post.content}</p>
+                        <div class="edit-form" id="edit-form-${entityType}-${entityId}">
+                            <textarea id="edit-content-${entityType}-${entityId}" rows="5">${post.content}</textarea>
+                            <button onclick="saveEdit('${entityType}', '${entityId}')">Save</button>
+                            <button class="cancel-button" onclick="cancelEdit('${entityType}', '${entityId}')">Cancel</button>
+                            <div class="message" style="display:none;"></div>
+                            <div class="error" style="display:none;"></div>
+                        </div>
+                        <div class="post-footer">
+                            <span class="post-timestamp">${timestamp}</span>
+                            <div class="actions">
+                                ${canEditOrDelete ? `
+                                    <button class="edit-btn" onclick="showEditForm('${entityType}', '${entityId}')"><i class="fas fa-edit"></i></button>
+                                    <button class="delete-btn" onclick="deletePost('${entityType}', '${entityId}')"><i class="fas fa-trash"></i></button>
+                                ` : ''}
+                                <button class="upvote" onclick="vote('${entityId}', '${entityType}', 1)"><i class="fas fa-arrow-up"></i></button>
+                                <span>${netVotes}</span>
+                                <button class="downvote" onclick="vote('${entityId}', '${entityType}', -1)"><i class="fas fa-arrow-down"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showEditForm(entityType, entityId) {
+            document.querySelectorAll('.edit-form').forEach(form => {
+                form.style.display = 'none';
+                form.querySelector('.message').style.display = 'none';
+                form.querySelector('.error').style.display = 'none';
+            });
+
+            const contentElement = document.getElementById(`content-${entityType}-${entityId}`);
+            const editForm = document.getElementById(`edit-form-${entityType}-${entityId}`);
+            const textarea = document.getElementById(`edit-content-${entityType}-${entityId}`);
+
+            if (contentElement && editForm && textarea) {
+                contentElement.style.display = 'none';
+                editForm.style.display = 'block';
+                textarea.focus();
+                textarea.value = contentElement.textContent;
+            }
+        }
+
+        function cancelEdit(entityType, entityId) {
+            const contentElement = document.getElementById(`content-${entityType}-${entityId}`);
+            const editForm = document.getElementById(`edit-form-${entityType}-${entityId}`);
+            if (contentElement && editForm) {
+                contentElement.style.display = 'block';
+                editForm.style.display = 'none';
+                editForm.querySelector('.message').style.display = 'none';
+                editForm.querySelector('.error').style.display = 'none';
+            }
+        }
+
+        async function saveEdit(entityType, entityId) {
+            const textarea = document.getElementById(`edit-content-${entityType}-${entityId}`);
+            const newContent = textarea.value.trim();
+            const editForm = document.getElementById(`edit-form-${entityType}-${entityId}`);
+            const messageDiv = editForm.querySelector('.message');
+            const errorDiv = editForm.querySelector('.error');
+
+            messageDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+
+            if (!newContent) {
+                errorDiv.textContent = 'Content cannot be empty.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/forum/${entityType}s/${entityId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: newContent })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    messageDiv.textContent = data.message || 'Updated successfully!';
+                    messageDiv.style.display = 'block';
+                    fetchTopicAndPosts();
+                } else {
+                    errorDiv.textContent = data.error || 'Failed to update.';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                console.error(`Error updating ${entityType}:`, err);
+                errorDiv.textContent = 'Network error or server unavailable.';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        async function deletePost(entityType, entityId) {
+            if (!confirm(`Are you sure you want to delete this ${entityType}? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/forum/${entityType}s/${entityId}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(data.message || 'Deleted successfully!');
+                    fetchTopicAndPosts();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to delete.'));
+                }
+            } catch (err) {
+                console.error(`Error deleting ${entityType}:`, err);
+                alert('Network error or server unavailable.');
+            }
+        }
+
+        async function vote(entityId, entityType, voteType) {
+            try {
+                const res = await fetch(`/api/vote/${entityType}/${entityId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ voteType })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    fetchTopicAndPosts();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to cast vote.'));
+                }
+            } catch (err) {
+                console.error('Network error during vote:', err);
+                alert('Network error or server unavailable.');
+            }
+        }
+
+        newReplyForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const content = replyContentInput.value;
+
+            newReplyMessageDiv.style.display = 'none';
+            newReplyErrorDiv.style.display = 'none';
+
+            if (isTopicLocked) {
+                newReplyErrorDiv.textContent = 'Cannot reply: This topic is locked.';
+                newReplyErrorDiv.style.display = 'block';
+                return;
+            }
+
+            if (!content.trim()) {
+                newReplyErrorDiv.textContent = 'Reply content cannot be empty.';
+                newReplyErrorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/forum/topics/${topicId}/posts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    newReplyMessageDiv.textContent = data.message || 'Reply posted successfully!';
+                    newReplyMessageDiv.style.display = 'block';
+                    newReplyForm.reset();
+                    fetchTopicAndPosts();
+                } else {
+                    newReplyErrorDiv.textContent = data.error || 'Failed to post reply.';
+                    newReplyErrorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Error posting reply:', err);
+                newReplyErrorDiv.textContent = 'Network error or server unavailable.';
+                newReplyErrorDiv.style.display = 'block';
+            }
+        });
+
+        // Initial loads
+        // Ensure user permissions and topic/posts are fetched in order
+        fetchUserDataForPermissions().then(() => {
+            fetchTopicAndPosts();
+        });
+    </script>
+    <script src="/notifications.js"></script>
+</body>
+
+</html>

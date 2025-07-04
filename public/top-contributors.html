@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Contributors - UIU Connect</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .contributors-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .contributors-table th,
+        .contributors-table td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: left;
+            color: var(--text-color-primary);
+        }
+
+        .contributors-table th {
+            background-color: var(--header-bg-color);
+            font-weight: bold;
+        }
+
+        .contributors-table td {
+            background-color: var(--primary-bg-color);
+        }
+
+        .contributors-table .username {
+            font-weight: bold;
+        }
+
+        .contributors-table .role-Admin {
+            color: #f44336;
+        }
+
+        .contributors-table .role-Moderator {
+            color: #e91e63;
+        }
+
+        .contributors-table .role-Student {
+            color: #4CAF50;
+        }
+
+        .contributors-table .role-Faculty {
+            color: #2196F3;
+        }
+
+        .contributors-table .role-Alumni {
+            color: #FFC107;
+        }
+
+        .no-contributors {
+            color: var(--text-color-secondary);
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Top Contributors</h1>
+        <div style="display: flex; align-items: center;">
+            <div class="notification-icon-container">
+                <i class="fas fa-bell" id="notificationBell"></i>
+                <span class="notification-badge" id="notificationBadge"></span>
+                <div class="notifications-dropdown" id="notificationsDropdown">
+                    <h3>Notifications</h3>
+                    <div id="notificationsList">
+                        <p class="no-notifications">No new notifications.</p>
+                    </div>
+                    <button class="mark-all-read-btn" id="markAllReadBtn" style="display:none;">Mark All As
+                        Read</button>
+                </div>
+            </div>
+            <a href="/logout" class="action-link-danger">Logout</a>
+        </div>
+    </div>
+
+
+    <nav class="navbar">
+        <ul>
+            <li><a href="/profile">Home</a></li>
+            <li><a href="/forum">Forum</a></li>
+            <li><a href="/events">Events</a></li>
+            <li><a href="/career">Career Corner</a></li>
+            <li><a href="/alumni">Alumni Network</a></li>
+            <li><a href="/announcements">Announcements</a></li>
+            <li><a href="/inbox">Inbox</a></li>
+            <li><a href="/irc">IRC Chat</a></li>
+            <li><a href="/settings">Settings</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/top-contributors">Top Contributors</a></li>
+            <li id="adminLink" style="display:none;"><a href="/admin">Admin Panel</a></li>
+            <li><a href="/filesharing" id="fileSharingLink">File Sharing</a></li>
+            <li><a href="/activities">My Activities</a></li>
+            <li><a href="/faculty-panel">Faculty Panel</a></li>
+            <li><a href="/support">Support</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h2>Our Most Active Members</h2>
+        <div id="topContributorsList">
+            <p class="no-contributors">Loading top contributors...</p>
+        </div>
+        <div id="contributorsError" class="error" style="display:none;"></div>
+    </div>
+
+    <div class="footer">
+        <p>UIU Connect By END</p>
+    </div>
+
+    <script>
+        const topContributorsListDiv = document.getElementById('topContributorsList');
+        const contributorsErrorDiv = document.getElementById('contributorsError');
+
+        async function fetchTopContributors() {
+            topContributorsListDiv.innerHTML = '<p class="no-contributors">Loading top contributors...</p>';
+            contributorsErrorDiv.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/top-contributors');
+                const contributors = await res.json();
+
+                if (res.ok) {
+                    topContributorsListDiv.innerHTML = '';
+                    if (contributors.length === 0) {
+                        topContributorsListDiv.innerHTML = '<p class="no-contributors">No contributors found yet.</p>';
+                    } else {
+                        const table = document.createElement('table');
+                        table.classList.add('contributors-table');
+                        table.innerHTML = `
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Username</th>
+                                    <th>Name</th>
+                                    <th>Role</th>
+                                    <th>Posts</th>
+                                    <th>Reputation</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        `;
+                        const tbody = table.querySelector('tbody');
+
+                        contributors.forEach((contributor, index) => {
+                            const row = tbody.insertRow();
+                            row.insertCell().textContent = index + 1;
+                            const usernameCell = row.insertCell();
+                            const usernameSpan = document.createElement('span');
+                            usernameSpan.classList.add('username', `role-${contributor.display_role}`);
+                            usernameSpan.textContent = contributor.username;
+                            usernameCell.appendChild(usernameSpan);
+                            row.insertCell().textContent = contributor.name;
+                            row.insertCell().textContent = contributor.display_role || 'N/A';
+                            row.insertCell().textContent = contributor.post_count;
+                            row.insertCell().textContent = contributor.reputation_points;
+                        });
+                        topContributorsListDiv.appendChild(table);
+                    }
+                } else {
+                    contributorsErrorDiv.textContent = contributors.error || 'Failed to load top contributors.';
+                    contributorsErrorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error fetching top contributors:', error);
+                contributorsErrorDiv.textContent = 'Network error or server unavailable.';
+                contributorsErrorDiv.style.display = 'block';
+            }
+        }
+
+        async function checkAdminStatus() {
+            try {
+                const res = await fetch('/user-data');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.user.roles && data.user.roles.includes('Admin')) {
+                        document.getElementById('adminLink').style.display = 'inline';
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking admin status:', error);
+            }
+        }
+
+        checkAdminStatus();
+        fetchTopContributors();
+    </script>
+    <script src="/notifications.js"></script>
+</body>
+
+</html>

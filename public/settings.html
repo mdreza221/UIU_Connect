@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - UIU Connect</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body>
+    <div class="header">
+        <h1>Settings</h1>
+        <div style="display: flex; align-items: center;">
+            <div class="notification-icon-container">
+                <i class="fas fa-bell" id="notificationBell"></i>
+                <span class="notification-badge" id="notificationBadge"></span>
+                <div class="notifications-dropdown" id="notificationsDropdown">
+                    <h3>Notifications</h3>
+                    <div id="notificationsList">
+                        <p class="no-notifications">No new notifications.</p>
+                    </div>
+                    <button class="mark-all-read-btn" id="markAllReadBtn" style="display:none;">Mark All As
+                        Read</button>
+                </div>
+            </div>
+            <a href="/logout" class="action-link-danger">Logout</a>
+        </div>
+    </div>
+
+
+    <nav class="navbar">
+        <ul>
+            <li><a href="/profile">Home</a></li>
+            <li><a href="/forum">Forum</a></li>
+            <li><a href="/events">Events</a></li>
+            <li><a href="/career">Career Corner</a></li>
+            <li><a href="/alumni">Alumni Network</a></li>
+            <li><a href="/announcements">Announcements</a></li>
+            <li><a href="/inbox">Inbox</a></li>
+            <li><a href="/irc">IRC Chat</a></li>
+            <li><a href="/settings">Settings</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/top-contributors">Top Contributors</a></li>
+            <li id="adminLink" style="display:none;"><a href="/admin">Admin Panel</a></li>
+            <li><a href="/filesharing" id="fileSharingLink">File Sharing</a></li>
+            <li><a href="/activities">My Activities</a></li>
+            <li><a href="/faculty-panel">Faculty Panel</a></li>
+            <li><a href="/support">Support</a></li>
+        </ul>
+    </nav>
+
+
+    <div class="container">
+        <h2>Update Your Settings</h2>
+        <form id="settingsForm">
+            <label for="currentUsername">Username:</label>
+            <input type="text" id="currentUsername" disabled>
+            <label for="currentEmail">Current Email:</label>
+            <input type="email" id="currentEmail" disabled>
+
+            <label for="newEmail">New Email (optional):</label>
+            <input type="email" id="newEmail" name="newEmail">
+
+            <label for="newPassword">New Password (optional):</label>
+            <input type="password" id="newPassword" name="newPassword">
+
+            <button type="submit">Update Settings</button>
+            <div id="settingsMessage" class="message" style="display:none;"></div>
+            <div id="settingsError" class="error" style="display:none;"></div>
+        </form>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2025 UIU Connect</p>
+    </div>
+
+    <script>
+        async function loadUserSettings() {
+            try {
+                const res = await fetch('/user-data');
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('currentUsername').value = data.user.username;
+                    document.getElementById('currentEmail').value = data.user.email;
+                    if (data.user.roles && data.user.roles.includes('Admin')) {
+                        document.getElementById('adminLink').style.display = 'inline';
+                    }
+                } else {
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('Error loading user settings:', error);
+                window.location.href = '/';
+            }
+        }
+        loadUserSettings();
+
+        document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newEmail = document.getElementById('newEmail').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const settingsMessage = document.getElementById('settingsMessage');
+            const settingsError = document.getElementById('settingsError');
+
+            settingsMessage.style.display = 'none';
+            settingsError.style.display = 'none';
+
+            try {
+                const res = await fetch('/update-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ newEmail, newPassword })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    settingsMessage.textContent = data.message;
+                    settingsMessage.style.display = 'block';
+                    document.getElementById('newEmail').value = '';
+                    document.getElementById('newPassword').value = '';
+                    loadUserSettings();
+                } else {
+                    settingsError.textContent = data.error;
+                    settingsError.style.display = 'block';
+                }
+            } catch (err) {
+                settingsError.textContent = 'Network error or server unavailable.';
+                settingsError.style.display = 'block';
+            }
+        });
+    </script>
+    <script src="/notifications.js"></script>
+</body>
+
+</html>

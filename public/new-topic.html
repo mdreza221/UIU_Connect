@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Topic - UIU Connect</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .topic-create-form {
+            background-color: var(--primary-bg-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .topic-create-form select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--primary-bg-color);
+            color: var(--text-color-primary);
+            font-size: 1em;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23bcaaa4%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-24.6%200L146.2%20202.7%2024.6%2069.4a17.6%2017.6%200%200%200-24.6%2024.6l129.2%20129.3c.8.8%201.8%201.2%202.8%201.2s2-.4%202.8-1.2L287%2094c17.6-17.6%2017.6-46.1.1-63.7z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Create New Topic</h1>
+        <div style="display: flex; align-items: center;">
+            <div class="notification-icon-container">
+                <i class="fas fa-bell" id="notificationBell"></i>
+                <span class="notification-badge" id="notificationBadge"></span>
+                <div class="notifications-dropdown" id="notificationsDropdown">
+                    <h3>Notifications</h3>
+                    <div id="notificationsList">
+                        <p class="no-notifications">No new notifications.</p>
+                    </div>
+                    <button class="mark-all-read-btn" id="markAllReadBtn" style="display:none;">Mark All As
+                        Read</button>
+                </div>
+            </div>
+            <a href="/logout" class="action-link-danger">Logout</a>
+        </div>
+    </div>
+
+
+    <nav class="navbar">
+        <ul>
+            <li><a href="/profile">Home</a></li>
+            <li><a href="/forum">Forum</a></li>
+            <li><a href="/events">Events</a></li>
+            <li><a href="/career">Career Corner</a></li>
+            <li><a href="/alumni">Alumni Network</a></li>
+            <li><a href="/announcements">Announcements</a></li>
+            <li><a href="/inbox">Inbox</a></li>
+            <li><a href="/irc">IRC Chat</a></li>
+            <li><a href="/settings">Settings</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/top-contributors">Top Contributors</a></li>
+            <li id="adminLink" style="display:none;"><a href="/admin">Admin Panel</a></li>
+            <li><a href="/filesharing" id="fileSharingLink">File Sharing</a></li>
+            <li><a href="/activities">My Activities</a></li>
+            <li><a href="/faculty-panel">Faculty Panel</a></li>
+            <li><a href="/support">Support</a></li>
+        </ul>
+    </nav>
+
+
+    <div class="container">
+        <h2>Post a New Discussion Topic</h2>
+        <form id="createTopicForm" class="topic-create-form">
+            <label for="sectionSelect">Choose Section:</label>
+            <select id="sectionSelect" required>
+                <option value="">-- Select a Section --</option>
+            </select>
+
+            <label for="newTopicTitle">Topic Title:</label>
+            <input type="text" id="newTopicTitle" required>
+
+            <label for="newTopicContent">Content:</label>
+            <textarea id="newTopicContent" rows="10" required></textarea>
+
+            <button type="submit">Create Topic</button>
+            <div id="createTopicMessage" class="message" style="display:none;"></div>
+            <div id="createTopicError" class="error" style="display:none;"></div>
+        </form>
+    </div>
+
+    <div class="footer">
+        <p>UIU Connect By END</p>
+    </div>
+
+    <script>
+        const sectionSelect = document.getElementById('sectionSelect');
+        const createTopicForm = document.getElementById('createTopicForm');
+        const newTopicTitleInput = document.getElementById('newTopicTitle');
+        const newTopicContentInput = document.getElementById('newTopicContent');
+        const createTopicMessageDiv = document.getElementById('createTopicMessage');
+        const createTopicErrorDiv = document.getElementById('createTopicError');
+
+        async function fetchSectionsForDropdown() {
+            try {
+                const res = await fetch('/api/forum/sections');
+                const sections = await res.json();
+                if (res.ok) {
+                    sections.forEach(section => {
+                        const option = document.createElement('option');
+                        option.value = section.id;
+                        option.textContent = section.name;
+                        sectionSelect.appendChild(option);
+                    });
+                } else {
+                    console.error('Failed to load sections for dropdown:', sections.error);
+                    createTopicErrorDiv.textContent = 'Failed to load forum sections. Please try again later.';
+                    createTopicErrorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Network error fetching sections:', error);
+                createTopicErrorDiv.textContent = 'Network error loading forum sections.';
+                createTopicErrorDiv.style.display = 'block';
+            }
+        }
+
+        createTopicForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const sectionId = sectionSelect.value;
+            const title = newTopicTitleInput.value;
+            const content = newTopicContentInput.value;
+
+            createTopicMessageDiv.style.display = 'none';
+            createTopicErrorDiv.style.display = 'none';
+
+            if (!sectionId || !title.trim() || !content.trim()) {
+                createTopicErrorDiv.textContent = 'Please select a section and fill in all fields.';
+                createTopicErrorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/forum/sections/${sectionId}/topics`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, content })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    createTopicMessageDiv.textContent = data.message || 'Topic created successfully!';
+                    createTopicMessageDiv.style.display = 'block';
+                    createTopicForm.reset();
+                    sectionSelect.value = '';
+                } else {
+                    createTopicErrorDiv.textContent = data.error || 'Failed to create topic.';
+                    createTopicErrorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Error creating topic:', err);
+                createTopicErrorDiv.textContent = 'Network error or server unavailable.';
+                createTopicErrorDiv.style.display = 'block';
+            }
+        });
+
+        fetchSectionsForDropdown();
+
+        async function checkAdminStatus() {
+            try {
+                const res = await fetch('/user-data');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.user.roles && data.user.roles.includes('Admin')) {
+                        document.getElementById('adminLink').style.display = 'inline';
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking admin status:', error);
+            }
+        }
+        checkAdminStatus();
+    </script>
+    <script src="/notifications.js"></script>
+</body>
+
+</html>
